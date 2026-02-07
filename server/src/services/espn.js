@@ -1,3 +1,5 @@
+import { getOrFetch, keys, TTL } from './cache.js';
+
 const BASE_URL = 'https://site.api.espn.com/apis/site/v2/sports';
 const SUMMARY_BASE_URL = 'https://site.web.api.espn.com/apis/site/v2/sports';
 
@@ -33,7 +35,7 @@ async function fetchJson(url) {
  */
 export async function getScoreboard(sport, league, date) {
   const url = `${BASE_URL}/${sport}/${league}/scoreboard?dates=${date}`;
-  return fetchJson(url);
+  return getOrFetch(keys.espnScores(league, date), () => fetchJson(url), TTL.ESPN);
 }
 
 /**
@@ -49,7 +51,7 @@ export async function getScoreboard(sport, league, date) {
  */
 export async function getTeamStats(sport, league, teamId) {
   const url = `${BASE_URL}/${sport}/${league}/teams/${teamId}/statistics`;
-  return fetchJson(url);
+  return getOrFetch(keys.espnTeamStats(league, teamId), () => fetchJson(url), TTL.ESPN_STATS);
 }
 
 /**
@@ -66,7 +68,7 @@ export async function getTeamStats(sport, league, teamId) {
  */
 export async function getGameSummary(sport, league, eventId) {
   const url = `${SUMMARY_BASE_URL}/${sport}/${league}/summary?event=${eventId}`;
-  return fetchJson(url);
+  return getOrFetch(keys.espnGameSummary(league, eventId), () => fetchJson(url), TTL.ESPN);
 }
 
 /**
@@ -81,7 +83,7 @@ export async function getGameSummary(sport, league, eventId) {
  */
 export async function getStandings(sport, league) {
   const url = `${BASE_URL}/${sport}/${league}/standings`;
-  return fetchJson(url);
+  return getOrFetch(keys.espnStandings(league), () => fetchJson(url), TTL.ESPN);
 }
 
 /**
@@ -97,5 +99,5 @@ export async function getStandings(sport, league) {
  */
 export async function getInjuries(sport, league) {
   const url = `${BASE_URL}/${sport}/${league}/injuries`;
-  return fetchJson(url);
+  return getOrFetch(keys.espnInjuries(league), () => fetchJson(url), TTL.ESPN);
 }
