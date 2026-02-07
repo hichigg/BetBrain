@@ -4,6 +4,7 @@ const BASE_URL = 'https://api.the-odds-api.com/v4';
 const API_KEY = process.env.ODDS_API_KEY;
 const DEFAULT_MARKETS = 'h2h,spreads,totals';
 const REGION = 'us';
+const ODDS_FORMAT = 'american';
 
 /** Tracks API usage from response headers */
 let requestsRemaining = null;
@@ -69,7 +70,7 @@ export async function getSports() {
  *   const spreadsOnly = await getOdds('americanfootball_nfl', 'spreads');
  */
 export async function getOdds(sportKey, markets = DEFAULT_MARKETS) {
-  const url = `${BASE_URL}/sports/${sportKey}/odds?apiKey=${API_KEY}&regions=${REGION}&markets=${markets}`;
+  const url = `${BASE_URL}/sports/${sportKey}/odds?apiKey=${API_KEY}&regions=${REGION}&markets=${markets}&oddsFormat=${ODDS_FORMAT}`;
   const today = new Date().toISOString().split('T')[0].replace(/-/g, '');
   return getOrFetch(keys.odds(sportKey, today), () => fetchOdds(url), TTL.ODDS);
 }
@@ -86,7 +87,7 @@ export async function getOdds(sportKey, markets = DEFAULT_MARKETS) {
  *   const props = await getEventOdds('basketball_nba', 'abc123', 'player_points');
  */
 export async function getEventOdds(sportKey, eventId, markets = DEFAULT_MARKETS) {
-  const url = `${BASE_URL}/sports/${sportKey}/events/${eventId}/odds?apiKey=${API_KEY}&regions=${REGION}&markets=${markets}`;
+  const url = `${BASE_URL}/sports/${sportKey}/events/${eventId}/odds?apiKey=${API_KEY}&regions=${REGION}&markets=${markets}&oddsFormat=${ODDS_FORMAT}`;
   return getOrFetch(keys.oddsEvent(sportKey, eventId), () => fetchOdds(url), TTL.ODDS);
 }
 
