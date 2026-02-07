@@ -50,7 +50,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/games" element={<GamesToday />} />
-          <Route path="/games/:gameId" element={<GameDetail />} />
+          <Route path="/games/:sport/:gameId" element={<GameDetail />} />
           <Route path="/betslip" element={<BetSlip />} />
           <Route path="/performance" element={<Performance />} />
           <Route path="/settings" element={<Settings />} />
