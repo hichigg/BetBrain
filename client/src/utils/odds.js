@@ -54,3 +54,55 @@ export function formatProbability(odds) {
   if (odds == null) return '\u2014';
   return `${(impliedProbability(odds) * 100).toFixed(1)}%`;
 }
+
+function gcd(a, b) {
+  a = Math.abs(a);
+  b = Math.abs(b);
+  while (b) {
+    [a, b] = [b, a % b];
+  }
+  return a;
+}
+
+/**
+ * Convert American odds to fractional odds string.
+ *
+ * @param {number} odds - American odds
+ * @returns {string} e.g. "3/2", "10/11", "EVEN"
+ */
+export function americanToFractional(odds) {
+  if (odds == null) return '\u2014';
+  if (odds === 100 || odds === -100) return 'EVEN';
+  let num, den;
+  if (odds > 0) {
+    num = odds;
+    den = 100;
+  } else {
+    num = 100;
+    den = Math.abs(odds);
+  }
+  const d = gcd(num, den);
+  return `${num / d}/${den / d}`;
+}
+
+/**
+ * Format odds in the given display format.
+ *
+ * @param {number | string | null | undefined} odds - American odds (number or string like "+150")
+ * @param {'american' | 'decimal' | 'fractional'} format - Display format
+ * @returns {string} Formatted odds string
+ */
+export function formatOddsDisplay(odds, format = 'american') {
+  if (odds == null) return '\u2014';
+  const numOdds = typeof odds === 'string' ? parseInt(odds, 10) : odds;
+  if (isNaN(numOdds)) return typeof odds === 'string' ? odds : '\u2014';
+
+  switch (format) {
+    case 'decimal':
+      return americanToDecimal(numOdds).toFixed(2);
+    case 'fractional':
+      return americanToFractional(numOdds);
+    default:
+      return formatOdds(numOdds);
+  }
+}

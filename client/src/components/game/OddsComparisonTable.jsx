@@ -1,4 +1,5 @@
-import { formatOdds, americanToDecimal } from '../../utils/odds';
+import { americanToDecimal, formatOddsDisplay } from '../../utils/odds';
+import { useSettings } from '../../hooks/useSettings';
 
 function isBest(price, allPrices) {
   if (price == null || allPrices.length === 0) return false;
@@ -7,7 +8,7 @@ function isBest(price, allPrices) {
   return americanToDecimal(price) >= best;
 }
 
-function OddsCell({ price, allPrices }) {
+function OddsCell({ price, allPrices, oddsFormat }) {
   const best = isBest(price, allPrices);
   return (
     <td
@@ -15,12 +16,12 @@ function OddsCell({ price, allPrices }) {
         best ? 'text-emerald-400 font-semibold' : 'text-gray-300'
       }`}
     >
-      {formatOdds(price)}
+      {formatOddsDisplay(price, oddsFormat)}
     </td>
   );
 }
 
-function PointCell({ point, price, allPrices }) {
+function PointCell({ point, price, allPrices, oddsFormat }) {
   const best = isBest(price, allPrices);
   return (
     <td className="px-3 py-2.5 text-center text-sm">
@@ -31,13 +32,15 @@ function PointCell({ point, price, allPrices }) {
         </span>
       )}
       <span className={`font-mono ${best ? 'text-emerald-400 font-semibold' : 'text-gray-400'}`}>
-        ({formatOdds(price)})
+        ({formatOddsDisplay(price, oddsFormat)})
       </span>
     </td>
   );
 }
 
 export default function OddsComparisonTable({ odds, homeName, awayName }) {
+  const { settings } = useSettings();
+
   if (!odds?.bookmakers?.length) {
     return (
       <div className="text-center py-8 text-gray-500 text-sm">
@@ -92,18 +95,25 @@ export default function OddsComparisonTable({ odds, homeName, awayName }) {
             const homeSpr = bm.markets.spreads?.find((o) => o.name === homeName);
             const over = bm.markets.totals?.find((o) => o.name === 'Over');
             const under = bm.markets.totals?.find((o) => o.name === 'Under');
+            const isPreferred = settings.preferredBooks.includes(bm.key);
 
             return (
-              <tr key={bm.key} className="hover:bg-gray-800/30 transition-colors">
+              <tr
+                key={bm.key}
+                className={`hover:bg-gray-800/30 transition-colors ${
+                  isPreferred ? 'bg-indigo-500/5 border-l-2 border-l-indigo-500' : ''
+                }`}
+              >
                 <td className="px-3 py-2.5 text-sm font-medium text-gray-300 whitespace-nowrap">
+                  {isPreferred && <span className="text-indigo-400 mr-1">★</span>}
                   {bm.title}
                 </td>
-                <OddsCell price={awayML?.price} allPrices={allAwayML} />
-                <OddsCell price={homeML?.price} allPrices={allHomeML} />
-                <PointCell price={awaySpr?.price} point={awaySpr?.point} allPrices={allAwaySpread} />
-                <PointCell price={homeSpr?.price} point={homeSpr?.point} allPrices={allHomeSpread} />
-                <PointCell price={over?.price} point={over?.point} allPrices={allOver} />
-                <PointCell price={under?.price} point={under?.point} allPrices={allUnder} />
+                <OddsCell price={awayML?.price} allPrices={allAwayML} oddsFormat={settings.oddsFormat} />
+                <OddsCell price={homeML?.price} allPrices={allHomeML} oddsFormat={settings.oddsFormat} />
+                <PointCell price={awaySpr?.price} point={awaySpr?.point} allPrices={allAwaySpread} oddsFormat={settings.oddsFormat} />
+                <PointCell price={homeSpr?.price} point={homeSpr?.point} allPrices={allHomeSpread} oddsFormat={settings.oddsFormat} />
+                <PointCell price={over?.price} point={over?.point} allPrices={allOver} oddsFormat={settings.oddsFormat} />
+                <PointCell price={under?.price} point={under?.point} allPrices={allUnder} oddsFormat={settings.oddsFormat} />
               </tr>
             );
           })}

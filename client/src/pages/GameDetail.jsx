@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { gamesApi, picksApi, betslipApi } from '../services/api';
-import { formatOdds } from '../utils/odds';
+import { formatOddsDisplay } from '../utils/odds';
+import { useSettings } from '../hooks/useSettings';
 import OddsComparisonTable from '../components/game/OddsComparisonTable';
 import TeamComparison from '../components/game/TeamComparison';
 import ConfidenceBadge from '../components/picks/ConfidenceBadge';
@@ -231,7 +232,9 @@ function RecommendationCard({ rec, sport, gameId }) {
   const [expanded, setExpanded] = useState(false);
   const [added, setAdded] = useState(false);
   const { addToast } = useToast();
+  const { settings } = useSettings();
 
+  const betAmount = rec.units * (settings.bankroll * 0.01);
   const evNum = parseFloat(rec.expected_value);
   const evPositive = evNum > 0;
 
@@ -264,7 +267,7 @@ function RecommendationCard({ rec, sport, gameId }) {
             <span className="text-gray-500">{BET_TYPE_LABELS[rec.bet_type] || rec.bet_type}</span>
             {rec.odds && (
               <span className="font-mono text-gray-300">
-                {typeof rec.odds === 'number' ? formatOdds(rec.odds) : rec.odds}
+                {formatOddsDisplay(rec.odds, settings.oddsFormat)}
               </span>
             )}
             {rec.expected_value && (
@@ -275,7 +278,12 @@ function RecommendationCard({ rec, sport, gameId }) {
             <span className={`inline-flex px-1.5 py-0.5 rounded text-[10px] font-medium ring-1 ${riskColors[rec.risk_tier] || ''}`}>
               {rec.risk_tier}
             </span>
-            <span className="text-gray-500">{rec.units}u</span>
+            <span className="text-gray-500">
+              {rec.units}u
+              {settings.bankroll > 0 && (
+                <span className="text-gray-600 ml-1">(${betAmount.toFixed(0)})</span>
+              )}
+            </span>
           </div>
         </div>
         <svg

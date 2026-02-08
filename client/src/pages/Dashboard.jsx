@@ -5,6 +5,7 @@ import SportFilterBar from '../components/common/SportFilterBar';
 import ErrorPanel from '../components/common/ErrorPanel';
 import { useTopPicks } from '../hooks/usePicks';
 import useGames from '../hooks/useGames';
+import { useSettings } from '../hooks/useSettings';
 
 function todayStr() {
   return new Date().toISOString().split('T')[0];
@@ -55,20 +56,38 @@ function StatSkeleton() {
 
 // ── Dashboard ───────────────────────────────────────────────────────
 
+function applyRiskFilter(picks, riskTolerance) {
+  if (riskTolerance !== 'conservative') return picks;
+  return picks.filter((p) => {
+    if (p.confidence < 6) return false;
+    if (p.risk_tier === 'high' && p.confidence < 7) return false;
+    return true;
+  });
+}
+
 export default function Dashboard() {
   const [date] = useState(todayStr);
+  const { settings } = useSettings();
   const { picks: topPicks, loading: picksLoading, error: picksError, refetch: refetchPicks } = useTopPicks(date, 5);
   const { games, loading: gamesLoading, error: gamesError, refetch: refetchGames } = useGames('all', date);
 
-  // Count games per sport
+  // Count games per sport (filtered to tracked sports)
   const gameCounts = {};
   for (const game of games) {
-    gameCounts[game.sport] = (gameCounts[game.sport] || 0) + 1;
+    if (settings.trackedSports.includes(game.sport)) {
+      gameCounts[game.sport] = (gameCounts[game.sport] || 0) + 1;
+    }
   }
-  const totalGames = games.length;
+  const totalGames = Object.values(gameCounts).reduce((sum, c) => sum + c, 0);
+
+  // Filter picks by tracked sports, then apply risk tolerance
+  const filteredPicks = applyRiskFilter(
+    topPicks.filter((p) => settings.trackedSports.includes(p.sport)),
+    settings.riskTolerance,
+  );
 
   // Value picks: sort by EV instead of confidence
-  const valuePicks = [...topPicks]
+  const valuePicks = [...filteredPicks]
     .sort((a, b) => {
       const evA = parseFloat(a.expected_value) || 0;
       const evB = parseFloat(b.expected_value) || 0;
@@ -106,13 +125,13 @@ export default function Dashboard() {
             <StatCard label="Sports Active" value={Object.keys(gameCounts).length} />
             <StatCard
               label="Picks Generated"
-              value={picksLoading ? '...' : topPicks.length}
+              value={picksLoading ? '...' : filteredPicks.length}
             />
             <StatCard
               label="Avg Confidence"
               value={
-                topPicks.length > 0
-                  ? (topPicks.reduce((s, p) => s + p.confidence, 0) / topPicks.length).toFixed(1)
+                filteredPicks.length > 0
+                  ? (filteredPicks.reduce((s, p) => s + p.confidence, 0) / filteredPicks.length).toFixed(1)
                   : '—'
               }
             />
@@ -140,7 +159,7 @@ export default function Dashboard() {
             ))}
           </div>
         ) : (
-          <SportFilterBar gameCounts={gameCounts} linkMode />
+          <SportFilterBar gameCounts={gameCounts} linkMode visibleSports={settings.trackedSports} />
         )}
       </div>
 
@@ -157,9 +176,9 @@ export default function Dashboard() {
               <PickSkeleton key={i} />
             ))}
           </div>
-        ) : topPicks.length > 0 ? (
+        ) : filteredPicks.length > 0 ? (
           <div className="space-y-3">
-            {topPicks.map((pick, i) => (
+            {filteredPicks.map((pick, i) => (
               <PickCard key={`${pick.gameId}-${pick.bet_type}-${i}`} pick={pick} />
             ))}
           </div>

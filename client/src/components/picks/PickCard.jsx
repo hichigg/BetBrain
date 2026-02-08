@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import ConfidenceBadge from './ConfidenceBadge';
-import { formatOdds } from '../../utils/odds';
+import { formatOddsDisplay } from '../../utils/odds';
+import { useSettings } from '../../hooks/useSettings';
 
 const BET_TYPE_LABELS = {
   spread: 'Spread',
@@ -19,6 +20,7 @@ const SPORT_LABELS = {
 };
 
 function PickCard({ pick, compact = false }) {
+  const { settings } = useSettings();
   const {
     bet_type,
     pick: pickDesc,
@@ -33,6 +35,7 @@ function PickCard({ pick, compact = false }) {
     sport,
   } = pick;
 
+  const betAmount = units * (settings.bankroll * 0.01);
   const evNum = parseFloat(expected_value);
   const evPositive = evNum > 0;
 
@@ -69,7 +72,7 @@ function PickCard({ pick, compact = false }) {
           </span>
           {odds && (
             <span className="font-mono text-gray-300">
-              {typeof odds === 'number' ? formatOdds(odds) : odds}
+              {formatOddsDisplay(odds, settings.oddsFormat)}
             </span>
           )}
           {expected_value && (
@@ -82,6 +85,9 @@ function PickCard({ pick, compact = false }) {
           </span>
           <span className="text-gray-500">
             {units}u
+            {settings.bankroll > 0 && (
+              <span className="text-gray-600 ml-1">(${betAmount.toFixed(0)})</span>
+            )}
           </span>
         </div>
 

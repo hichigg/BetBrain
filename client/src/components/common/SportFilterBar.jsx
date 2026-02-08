@@ -9,10 +9,12 @@ const SPORTS = [
   { key: 'nhl', label: 'NHL' },
 ];
 
-function SportFilterBar({ gameCounts = {}, activeSport, onSelect, linkMode = false }) {
+function SportFilterBar({ gameCounts = {}, activeSport, onSelect, linkMode = false, visibleSports }) {
+  const sports = visibleSports ? SPORTS.filter((s) => visibleSports.includes(s.key)) : SPORTS;
+
   return (
     <div className="flex gap-2 overflow-x-auto pb-1">
-      {SPORTS.map((s) => {
+      {sports.map((s) => {
         const count = gameCounts[s.key] ?? null;
         const isActive = activeSport === s.key;
 
