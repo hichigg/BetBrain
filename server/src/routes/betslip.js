@@ -43,7 +43,7 @@ router.post('/', (req, res) => {
     const saved = savePick({
       game_id: req.body.gameId,
       sport: req.body.sport,
-      date: new Date().toISOString().split('T')[0],
+      date: (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })(),
       home_team: req.body.homeTeam,
       away_team: req.body.awayTeam,
       game_name: req.body.gameName,

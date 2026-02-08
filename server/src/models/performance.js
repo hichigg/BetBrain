@@ -8,7 +8,7 @@ function rangeToDate(range) {
   const d = days[range];
   if (d === undefined || d === 0) return null; // no filter
   now.setDate(now.getDate() - d);
-  return now.toISOString().split('T')[0];
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 }
 
 // ── Query functions ──────────────────────────────────────────────────

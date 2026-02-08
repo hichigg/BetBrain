@@ -33,7 +33,8 @@ function calcProfit(odds, units, result) {
 }
 
 function todayStr() {
-  return new Date().toISOString().split('T')[0];
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
 // ── CRUD functions ───────────────────────────────────────────────────

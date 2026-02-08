@@ -76,7 +76,8 @@ export async function getSports() {
  */
 export async function getOdds(sportKey, markets = DEFAULT_MARKETS) {
   const url = `${BASE_URL}/sports/${sportKey}/odds?apiKey=${API_KEY}&regions=${REGION}&markets=${markets}&oddsFormat=${ODDS_FORMAT}`;
-  const today = new Date().toISOString().split('T')[0].replace(/-/g, '');
+  const d = new Date();
+  const today = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
   return getOrFetch(keys.odds(sportKey, today), () => fetchOdds(url), TTL.ODDS);
 }
 

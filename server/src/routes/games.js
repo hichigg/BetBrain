@@ -11,7 +11,8 @@ const router = Router();
 router.get('/', async (req, res) => {
   try {
     const { sport = 'all', date } = req.query;
-    const gameDate = date || new Date().toISOString().split('T')[0];
+    const d = new Date();
+    const gameDate = date || `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     const sports = sport === 'all' ? getSupportedSports() : [sport];
 
     const results = await Promise.all(
