@@ -142,7 +142,7 @@ export default function GameDetail() {
               )
             }
           >
-            {analyzing && <AnalysisSkeleton />}
+            {analyzing && <AnalysisProgress />}
             {!analyzing && !analysis && (
               <div className="text-center py-8">
                 <p className="text-gray-500 text-sm">
@@ -402,19 +402,91 @@ function PageSkeleton() {
   );
 }
 
-function AnalysisSkeleton() {
+const ANALYSIS_STEPS = [
+  { label: 'Gathering team stats and odds data...', target: 15 },
+  { label: 'Analyzing matchup factors...', target: 35 },
+  { label: 'Evaluating betting markets...', target: 55 },
+  { label: 'Running Claude AI model...', target: 75 },
+  { label: 'Generating recommendations...', target: 90 },
+];
+
+function AnalysisProgress() {
+  const [progress, setProgress] = useState(0);
+  const [stepIdx, setStepIdx] = useState(0);
+
+  useEffect(() => {
+    let frame;
+    let start = Date.now();
+
+    function tick() {
+      const elapsed = Date.now() - start;
+      // Fast start, slows down — asymptotically approaches 92%
+      const next = Math.min(92, 92 * (1 - Math.exp(-elapsed / 8000)));
+      setProgress(next);
+
+      // Advance step label based on progress
+      const idx = ANALYSIS_STEPS.findIndex((s) => next < s.target);
+      setStepIdx(idx === -1 ? ANALYSIS_STEPS.length - 1 : Math.max(0, idx));
+
+      frame = requestAnimationFrame(tick);
+    }
+
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, []);
+
+  const step = ANALYSIS_STEPS[stepIdx];
+  const barColor =
+    progress < 40
+      ? 'bg-indigo-500'
+      : progress < 70
+        ? 'bg-indigo-400'
+        : 'bg-emerald-500';
+
   return (
-    <div className="animate-pulse space-y-4">
-      <div className="h-3 w-full bg-gray-700 rounded" />
-      <div className="h-3 w-3/4 bg-gray-700 rounded" />
-      <div className="space-y-3 mt-4">
-        {[1, 2].map((i) => (
-          <div key={i} className="bg-gray-900/50 rounded-lg border border-gray-700/30 p-4 flex gap-3">
-            <div className="w-8 h-8 bg-gray-700 rounded-full" />
-            <div className="flex-1 space-y-2">
-              <div className="h-4 w-48 bg-gray-700 rounded" />
-              <div className="h-3 w-32 bg-gray-700 rounded" />
-            </div>
+    <div className="py-6 px-2">
+      {/* Step label */}
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <svg className="w-4 h-4 text-indigo-400 animate-spin" viewBox="0 0 24 24" fill="none">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+          </svg>
+          <span className="text-sm text-gray-400">{step.label}</span>
+        </div>
+        <span className="text-xs font-mono text-gray-500">
+          {Math.round(progress)}%
+        </span>
+      </div>
+
+      {/* Progress bar */}
+      <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+        <div
+          className={`h-full rounded-full transition-all duration-300 ease-out ${barColor}`}
+          style={{ width: `${progress}%` }}
+        />
+      </div>
+
+      {/* Step indicators */}
+      <div className="flex justify-between mt-4">
+        {ANALYSIS_STEPS.map((s, i) => (
+          <div key={i} className="flex flex-col items-center gap-1.5">
+            <div
+              className={`w-2 h-2 rounded-full transition-colors duration-300 ${
+                progress >= s.target
+                  ? 'bg-emerald-500'
+                  : i === stepIdx
+                    ? 'bg-indigo-400 animate-pulse'
+                    : 'bg-gray-700'
+              }`}
+            />
+            <span
+              className={`text-[10px] hidden sm:block transition-colors duration-300 ${
+                i === stepIdx ? 'text-gray-300' : 'text-gray-600'
+              }`}
+            >
+              {s.label.replace('...', '').split(' ').slice(0, 2).join(' ')}
+            </span>
           </div>
         ))}
       </div>
