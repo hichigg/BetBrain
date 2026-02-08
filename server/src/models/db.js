@@ -53,7 +53,7 @@ db.exec(`
 
   CREATE TABLE IF NOT EXISTS users (
     id              TEXT PRIMARY KEY,
-    google_id       TEXT UNIQUE NOT NULL,
+    google_id       TEXT UNIQUE,
     email           TEXT UNIQUE NOT NULL,
     name            TEXT,
     picture         TEXT,
@@ -61,6 +61,15 @@ db.exec(`
     stripe_customer_id TEXT UNIQUE,
     created_at      TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS otp_codes (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    email      TEXT NOT NULL,
+    code       TEXT NOT NULL,
+    expires_at TEXT NOT NULL,
+    used       INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
 
   CREATE TABLE IF NOT EXISTS subscriptions (
@@ -97,6 +106,33 @@ try {
   db.exec(`ALTER TABLE picks ADD COLUMN user_id TEXT DEFAULT NULL`);
 } catch {
   // Column already exists — ignore
+}
+
+// Migrate users table: make google_id nullable (SQLite requires table recreation)
+try {
+  const info = db.pragma('table_info(users)');
+  const googleIdCol = info.find((c) => c.name === 'google_id');
+  if (googleIdCol && googleIdCol.notnull === 1) {
+    db.exec(`
+      CREATE TABLE users_new (
+        id              TEXT PRIMARY KEY,
+        google_id       TEXT UNIQUE,
+        email           TEXT UNIQUE NOT NULL,
+        name            TEXT,
+        picture         TEXT,
+        tier            TEXT NOT NULL DEFAULT 'free',
+        stripe_customer_id TEXT UNIQUE,
+        created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+      INSERT INTO users_new SELECT * FROM users;
+      DROP TABLE users;
+      ALTER TABLE users_new RENAME TO users;
+    `);
+    console.log('Migrated users table: google_id is now nullable');
+  }
+} catch (err) {
+  console.warn('Users migration check:', err.message);
 }
 
 console.log('SQLite database initialized at', DB_PATH);

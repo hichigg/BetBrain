@@ -1,13 +1,13 @@
 import { Router } from 'express';
-import { OAuth2Client } from 'google-auth-library';
 import jwt from 'jsonwebtoken';
-import { findByGoogleId, createUser } from '../models/users.js';
+import { findOrCreateByEmail } from '../models/users.js';
+import { createOTP, verifyOTP } from '../models/otp.js';
+import { sendOTP } from '../services/email.js';
 import { getAnalysisCount } from '../models/usage.js';
 import { requireAuth } from '../middleware/auth.js';
 import { getEffectiveTier, TIER_LIMITS } from '../middleware/tier.js';
 
 const router = Router();
-const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 function todayStr() {
   const d = new Date();
@@ -22,34 +22,46 @@ function signToken(user) {
   );
 }
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 /**
- * POST /api/auth/google
- * Verify Google ID token, create or find user, return JWT + user info.
+ * POST /api/auth/send-otp
+ * Generate OTP and send it to the provided email.
  */
-router.post('/google', async (req, res) => {
+router.post('/send-otp', async (req, res) => {
   try {
-    const { credential } = req.body;
-    if (!credential) {
-      return res.status(400).json({ success: false, error: 'Missing Google credential' });
+    const { email } = req.body;
+    if (!email || !EMAIL_RE.test(email)) {
+      return res.status(400).json({ success: false, error: 'Valid email is required' });
     }
 
-    const ticket = await googleClient.verifyIdToken({
-      idToken: credential,
-      audience: process.env.GOOGLE_CLIENT_ID,
-    });
-    const payload = ticket.getPayload();
+    const code = createOTP(email.toLowerCase());
+    await sendOTP(email.toLowerCase(), code);
 
-    let user = findByGoogleId(payload.sub);
-    if (!user) {
-      user = createUser({
-        google_id: payload.sub,
-        email: payload.email,
-        name: payload.name,
-        picture: payload.picture,
-      });
-      console.log(`New user created: ${user.email} (${user.tier})`);
+    res.json({ success: true, data: { message: 'Verification code sent' } });
+  } catch (err) {
+    console.error('Send OTP error:', err.message);
+    res.status(500).json({ success: false, error: 'Failed to send verification code' });
+  }
+});
+
+/**
+ * POST /api/auth/verify-otp
+ * Verify OTP, create/find user, return JWT + user info.
+ */
+router.post('/verify-otp', (req, res) => {
+  try {
+    const { email, code } = req.body;
+    if (!email || !code) {
+      return res.status(400).json({ success: false, error: 'Email and code are required' });
     }
 
+    const valid = verifyOTP(email.toLowerCase(), code);
+    if (!valid) {
+      return res.status(401).json({ success: false, error: 'Invalid or expired code' });
+    }
+
+    const user = findOrCreateByEmail(email.toLowerCase());
     const token = signToken(user);
     const tier = getEffectiveTier(user);
 
@@ -61,14 +73,13 @@ router.post('/google', async (req, res) => {
           id: user.id,
           email: user.email,
           name: user.name,
-          picture: user.picture,
           tier,
         },
       },
     });
   } catch (err) {
-    console.error('Google auth error:', err.message);
-    res.status(401).json({ success: false, error: 'Google authentication failed' });
+    console.error('Verify OTP error:', err.message);
+    res.status(500).json({ success: false, error: 'Verification failed' });
   }
 });
 
@@ -89,7 +100,6 @@ router.get('/me', requireAuth, (req, res) => {
       id: user.id,
       email: user.email,
       name: user.name,
-      picture: user.picture,
       tier,
       usage: {
         analysesToday,

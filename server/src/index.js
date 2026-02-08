@@ -14,7 +14,7 @@ import { stats as cacheStats } from './services/cache.js';
 import { resolveAllPending } from './services/resolver.js';
 
 // ── Validate required environment variables ────────────────────────
-const REQUIRED_ENV = ['ANTHROPIC_API_KEY', 'ODDS_API_IO_KEY', 'JWT_SECRET', 'GOOGLE_CLIENT_ID'];
+const REQUIRED_ENV = ['ANTHROPIC_API_KEY', 'ODDS_API_IO_KEY', 'JWT_SECRET', 'RESEND_API_KEY'];
 const missing = REQUIRED_ENV.filter((key) => !process.env[key]);
 if (missing.length > 0) {
   console.error(`Missing required environment variables: ${missing.join(', ')}`);

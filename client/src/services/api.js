@@ -81,8 +81,10 @@ export const oddsApi = {
 };
 
 export const authApi = {
-  loginGoogle: (credential) =>
-    request('/auth/google', { method: 'POST', body: JSON.stringify({ credential }) }),
+  sendOTP: (email) =>
+    request('/auth/send-otp', { method: 'POST', body: JSON.stringify({ email }) }),
+  verifyOTP: (email, code) =>
+    request('/auth/verify-otp', { method: 'POST', body: JSON.stringify({ email, code }) }),
   me: () => request('/auth/me'),
 };
 

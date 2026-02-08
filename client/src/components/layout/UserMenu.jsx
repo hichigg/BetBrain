@@ -52,20 +52,11 @@ export default function UserMenu() {
         onClick={() => setOpen(!open)}
         className="flex items-center gap-2.5 w-full px-3 py-2.5 rounded-lg text-left hover:bg-slate-800 transition-colors"
       >
-        {user?.picture ? (
-          <img
-            src={user.picture}
-            alt=""
-            className="w-8 h-8 rounded-full flex-shrink-0"
-            referrerPolicy="no-referrer"
-          />
-        ) : (
-          <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center flex-shrink-0">
-            <span className="text-xs font-bold text-white">
-              {(user?.name || user?.email || '?')[0].toUpperCase()}
-            </span>
-          </div>
-        )}
+        <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center flex-shrink-0">
+          <span className="text-xs font-bold text-white">
+            {(user?.name || user?.email || '?')[0].toUpperCase()}
+          </span>
+        </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium text-gray-200 truncate">{user?.name || user?.email}</p>
           <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none ${badge.className}`}>

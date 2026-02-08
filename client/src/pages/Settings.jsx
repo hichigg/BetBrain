@@ -81,13 +81,9 @@ export default function Settings() {
       {/* 0. Account & Subscription */}
       <SettingsSection title="Account & Subscription">
         <div className="flex items-center gap-4 mb-4">
-          {user?.picture ? (
-            <img src={user.picture} alt="" className="w-12 h-12 rounded-full" referrerPolicy="no-referrer" />
-          ) : (
-            <div className="w-12 h-12 rounded-full bg-indigo-600 flex items-center justify-center">
-              <span className="text-lg font-bold text-white">{(user?.name || '?')[0].toUpperCase()}</span>
-            </div>
-          )}
+          <div className="w-12 h-12 rounded-full bg-indigo-600 flex items-center justify-center">
+            <span className="text-lg font-bold text-white">{(user?.name || user?.email || '?')[0].toUpperCase()}</span>
+          </div>
           <div>
             <p className="text-sm font-medium text-gray-200">{user?.name || user?.email}</p>
             <p className="text-xs text-gray-500">{user?.email}</p>
