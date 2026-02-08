@@ -129,6 +129,49 @@ export function getByBetType() {
 }
 
 /**
+ * Get performance by confidence tier (1-3, 4-5, 6-7, 8-10).
+ */
+export function getByConfidence() {
+  const rows = db
+    .prepare(
+      `SELECT
+         CASE
+           WHEN confidence >= 8 THEN 'high (8-10)'
+           WHEN confidence >= 6 THEN 'medium (6-7)'
+           WHEN confidence >= 4 THEN 'low (4-5)'
+           ELSE 'very low (1-3)'
+         END as tier,
+         MIN(confidence) as min_conf,
+         COUNT(*) as total,
+         SUM(CASE WHEN result = 'won' THEN 1 ELSE 0 END) as wins,
+         SUM(CASE WHEN result = 'lost' THEN 1 ELSE 0 END) as losses,
+         SUM(CASE WHEN result = 'push' THEN 1 ELSE 0 END) as pushes,
+         SUM(CASE WHEN result != 'pending' THEN profit_loss ELSE 0 END) as profit,
+         SUM(CASE WHEN result != 'pending' THEN units ELSE 0 END) as wagered,
+         AVG(CASE WHEN result != 'pending' THEN confidence ELSE NULL END) as avg_confidence
+       FROM picks
+       WHERE confidence IS NOT NULL AND result != 'pending'
+       GROUP BY tier
+       ORDER BY min_conf ASC`,
+    )
+    .all();
+
+  return rows.map((r) => {
+    const settled = r.wins + r.losses + r.pushes;
+    return {
+      tier: r.tier,
+      total: r.total,
+      settled,
+      record: { wins: r.wins, losses: r.losses, pushes: r.pushes },
+      winPct: settled > 0 ? parseFloat(((r.wins / settled) * 100).toFixed(1)) : 0,
+      avgConfidence: r.avg_confidence ? parseFloat(r.avg_confidence.toFixed(1)) : 0,
+      profit: parseFloat((r.profit || 0).toFixed(2)),
+      roi: r.wagered > 0 ? parseFloat(((r.profit / r.wagered) * 100).toFixed(1)) : 0,
+    };
+  });
+}
+
+/**
  * Get ROI over time (daily buckets).
  * @param {string} range
  */

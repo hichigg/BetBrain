@@ -56,4 +56,6 @@ export const performanceApi = {
   summary: (range = '7d') => request(`/performance/summary?range=${range}`),
   bySport: () => request('/performance/by-sport'),
   byBetType: () => request('/performance/by-bet-type'),
+  byConfidence: () => request('/performance/by-confidence'),
+  roi: (range = '30d') => request(`/performance/roi?range=${range}`),
 };

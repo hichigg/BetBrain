@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getSummary, getBySport, getByBetType, getROI } from '../models/performance.js';
+import { getSummary, getBySport, getByBetType, getByConfidence, getROI } from '../models/performance.js';
 
 const router = Router();
 
@@ -37,6 +37,18 @@ router.get('/by-bet-type', (req, res) => {
   } catch (err) {
     console.error('GET /api/performance/by-bet-type error:', err.message);
     res.status(500).json({ success: false, error: 'Failed to fetch bet type breakdown' });
+  }
+});
+
+/**
+ * GET /api/performance/by-confidence
+ */
+router.get('/by-confidence', (req, res) => {
+  try {
+    res.json({ success: true, data: getByConfidence() });
+  } catch (err) {
+    console.error('GET /api/performance/by-confidence error:', err.message);
+    res.status(500).json({ success: false, error: 'Failed to fetch confidence breakdown' });
   }
 });
 
