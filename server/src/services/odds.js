@@ -1,4 +1,5 @@
 import { getOrFetch, keys, TTL } from './cache.js';
+import fetchWithTimeout, { TIMEOUTS } from '../utils/fetchWithTimeout.js';
 
 const BASE_URL = 'https://api.the-odds-api.com/v4';
 const API_KEY = process.env.ODDS_API_KEY;
@@ -23,7 +24,7 @@ async function fetchOdds(url) {
   }
 
   try {
-    const res = await fetch(url);
+    const res = await fetchWithTimeout(url, {}, TIMEOUTS.ODDS);
 
     // Track usage from response headers
     const remaining = res.headers.get('x-requests-remaining');
@@ -44,7 +45,11 @@ async function fetchOdds(url) {
 
     return await res.json();
   } catch (err) {
-    console.error(`Odds API fetch failed: ${err.message} — ${url}`);
+    if (err.message.startsWith('Request timed out')) {
+      console.error(`Odds API timeout: ${url}`);
+    } else {
+      console.error(`Odds API fetch failed: ${err.message} — ${url}`);
+    }
     return null;
   }
 }

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import useGames from '../hooks/useGames';
+import ErrorPanel from '../components/common/ErrorPanel';
 
 const SPORTS = [
   { key: 'all', label: 'All' },
@@ -213,7 +214,7 @@ function EmptyState({ sport, date }) {
 export default function GamesToday() {
   const [sport, setSport] = useState('all');
   const [date, setDate] = useState(todayStr);
-  const { games, loading, error } = useGames(sport, date);
+  const { games, loading, error, refetch } = useGames(sport, date);
 
   return (
     <div>
@@ -247,8 +248,8 @@ export default function GamesToday() {
 
       {/* Error */}
       {error && (
-        <div className="bg-red-900/30 border border-red-800/50 rounded-lg px-4 py-3 text-red-300 text-sm mb-6">
-          Failed to load games: {error}
+        <div className="mb-6">
+          <ErrorPanel message={`Failed to load games: ${error}`} onRetry={refetch} />
         </div>
       )}
 

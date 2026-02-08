@@ -1,19 +1,41 @@
 const API_BASE = '/api';
+const DEFAULT_TIMEOUT = 15_000;
+const ANALYSIS_TIMEOUT = 90_000;
 
-async function request(endpoint, options = {}) {
+export class ApiError extends Error {
+  constructor(message, type = 'api') {
+    super(message);
+    this.name = 'ApiError';
+    this.type = type; // 'api' | 'network' | 'timeout'
+  }
+}
+
+async function request(endpoint, options = {}, timeoutMs = DEFAULT_TIMEOUT) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
   try {
     const res = await fetch(`${API_BASE}${endpoint}`, {
       headers: { 'Content-Type': 'application/json' },
       ...options,
+      signal: controller.signal,
     });
     const data = await res.json();
     if (!data.success) {
-      throw new Error(data.error || 'Request failed');
+      throw new ApiError(data.error || 'Request failed', 'api');
     }
     return data.data;
   } catch (err) {
-    console.error(`API error [${endpoint}]:`, err.message);
-    throw err;
+    if (err instanceof ApiError) throw err;
+    if (err.name === 'AbortError') {
+      throw new ApiError('Request timed out. Please try again.', 'timeout');
+    }
+    if (err instanceof TypeError && err.message.includes('fetch')) {
+      throw new ApiError('Network error — check your connection.', 'network');
+    }
+    throw new ApiError(err.message || 'Request failed', 'api');
+  } finally {
+    clearTimeout(timer);
   }
 }
 
@@ -29,7 +51,7 @@ export const gamesApi = {
 
 export const picksApi = {
   analyze: (body) =>
-    request('/picks/analyze', { method: 'POST', body: JSON.stringify(body) }),
+    request('/picks/analyze', { method: 'POST', body: JSON.stringify(body) }, ANALYSIS_TIMEOUT),
   getAll: (sport, date) => request(`/picks?sport=${sport}&date=${date}`),
   top: (date, limit = 5) => {
     const params = new URLSearchParams();

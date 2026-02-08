@@ -2,7 +2,7 @@ import SPORT_MAPPINGS from '../utils/sportMappings.js';
 import * as espn from './espn.js';
 import { getOdds } from './odds.js';
 import { getTopPlayersForTeam, searchPlayers } from './balldontlie.js';
-import { getOrFetch, TTL } from './cache.js';
+import { getOrFetch, getStale, TTL, keys } from './cache.js';
 
 // ── Team-name normalization for ESPN ↔ Odds API matching ────────────
 
@@ -263,12 +263,22 @@ export async function getGamesForSport(sport, date) {
   const { espn: espnMap, oddsApi } = mapping;
   const espnDate = date.replace(/-/g, '');
 
-  // Fetch ESPN scoreboard, odds, and injuries in parallel
-  const [scoreboard, oddsData, injuryData] = await Promise.all([
+  // Fetch ESPN scoreboard, odds, and injuries in parallel — use allSettled so one failure doesn't kill the request
+  const results = await Promise.allSettled([
     espn.getScoreboard(espnMap.sport, espnMap.league, espnDate),
     getOdds(oddsApi),
     espn.getInjuries(espnMap.sport, espnMap.league),
   ]);
+
+  let scoreboard = results[0].status === 'fulfilled' ? results[0].value : null;
+  const oddsData = results[1].status === 'fulfilled' ? results[1].value : null;
+  const injuryData = results[2].status === 'fulfilled' ? results[2].value : null;
+
+  // If ESPN scoreboard failed, try stale cache
+  if (!scoreboard) {
+    scoreboard = getStale(keys.espnScores(espnMap.league, espnDate)) || null;
+    if (scoreboard) console.log(`Using stale ESPN scoreboard for ${sport}/${espnDate}`);
+  }
 
   const events = scoreboard?.events || [];
   if (!events.length) return [];
@@ -340,11 +350,14 @@ export async function getGameDetail(sport, gameId) {
 
   const { espn: espnMap } = mapping;
 
-  // Fetch game summary + injuries in parallel
-  const [summary, injuryData] = await Promise.all([
+  // Fetch game summary + injuries in parallel — use allSettled so injuries failure doesn't block
+  const detailResults = await Promise.allSettled([
     espn.getGameSummary(espnMap.sport, espnMap.league, gameId),
     espn.getInjuries(espnMap.sport, espnMap.league),
   ]);
+
+  const summary = detailResults[0].status === 'fulfilled' ? detailResults[0].value : null;
+  const injuryData = detailResults[1].status === 'fulfilled' ? detailResults[1].value : null;
 
   if (!summary) return null;
 

@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { betslipApi } from '../services/api';
 import { formatOdds } from '../utils/odds';
 import ConfidenceBadge from '../components/picks/ConfidenceBadge';
+import ErrorPanel from '../components/common/ErrorPanel';
+import { useToast } from '../components/common/Toast';
 
 const BET_TYPE_LABELS = {
   spread: 'Spread',
@@ -25,16 +27,22 @@ const SPORT_LABELS = {
 export default function BetSlip() {
   const [slips, setSlips] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [filter, setFilter] = useState('all'); // all | pending | settled
+  const { addToast } = useToast();
 
   const fetchSlips = useCallback(() => {
     setLoading(true);
+    setError(null);
     betslipApi
       .getAll()
       .then(setSlips)
-      .catch((err) => console.error('Failed to load bet slip:', err.message))
+      .catch((err) => {
+        setError(err.message);
+        addToast(`Failed to load bet slip: ${err.message}`, 'error');
+      })
       .finally(() => setLoading(false));
-  }, []);
+  }, [addToast]);
 
   useEffect(() => {
     fetchSlips();
@@ -45,8 +53,9 @@ export default function BetSlip() {
       .update(id, { result })
       .then((updated) => {
         setSlips((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
+        addToast(`Pick marked as ${result}`, 'success');
       })
-      .catch((err) => console.error('Failed to update:', err.message));
+      .catch((err) => addToast(`Failed to update: ${err.message}`, 'error'));
   }
 
   function handleRemove(id) {
@@ -54,8 +63,9 @@ export default function BetSlip() {
       .remove(id)
       .then(() => {
         setSlips((prev) => prev.filter((s) => s.id !== id));
+        addToast('Pick removed', 'info');
       })
-      .catch((err) => console.error('Failed to remove:', err.message));
+      .catch((err) => addToast(`Failed to remove: ${err.message}`, 'error'));
   }
 
   // Filter slips
@@ -76,6 +86,18 @@ export default function BetSlip() {
   const roi = totalWagered > 0 ? (totalUnits / totalWagered) * 100 : 0;
 
   if (loading) return <PageSkeleton />;
+
+  if (error) {
+    return (
+      <div>
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-white mb-1">My Bet Slip</h1>
+          <p className="text-gray-500 text-sm">Track your picks and monitor results</p>
+        </div>
+        <ErrorPanel message={`Failed to load bet slip: ${error}`} onRetry={fetchSlips} />
+      </div>
+    );
+  }
 
   return (
     <div>

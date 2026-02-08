@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { performanceApi } from '../services/api';
 
 export default function usePerformance(range = '7d') {
@@ -8,10 +8,15 @@ export default function usePerformance(range = '7d') {
   const [byConfidence, setByConfidence] = useState([]);
   const [roiData, setRoiData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const refetch = useCallback(() => setRefreshKey((k) => k + 1), []);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
+    setError(null);
 
     Promise.all([
       performanceApi.summary(range),
@@ -42,13 +47,15 @@ export default function usePerformance(range = '7d') {
           }),
         );
       })
-      .catch((err) => console.error('Performance fetch failed:', err.message))
+      .catch((err) => {
+        if (!cancelled) setError(err.message);
+      })
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
 
     return () => { cancelled = true; };
-  }, [range]);
+  }, [range, refreshKey]);
 
-  return { summary, bySport, byBetType, byConfidence, roiData, loading };
+  return { summary, bySport, byBetType, byConfidence, roiData, loading, error, refetch };
 }

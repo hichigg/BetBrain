@@ -1,10 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { gamesApi, picksApi, betslipApi } from '../services/api';
 import { formatOdds } from '../utils/odds';
 import OddsComparisonTable from '../components/game/OddsComparisonTable';
 import TeamComparison from '../components/game/TeamComparison';
 import ConfidenceBadge from '../components/picks/ConfidenceBadge';
+import ErrorPanel from '../components/common/ErrorPanel';
+import { useToast } from '../components/common/Toast';
 
 const BET_TYPE_LABELS = {
   spread: 'Spread',
@@ -19,9 +21,14 @@ export default function GameDetail() {
   const { sport, gameId } = useParams();
   const [game, setGame] = useState(null);
   const [analysis, setAnalysis] = useState(null);
+  const [analysisError, setAnalysisError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [analyzing, setAnalyzing] = useState(false);
   const [error, setError] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const { addToast } = useToast();
+
+  const refetch = useCallback(() => setRefreshKey((k) => k + 1), []);
 
   // Fetch game detail
   useEffect(() => {
@@ -42,15 +49,19 @@ export default function GameDetail() {
       });
 
     return () => { cancelled = true; };
-  }, [sport, gameId]);
+  }, [sport, gameId, refreshKey]);
 
   // Trigger analysis
   function runAnalysis() {
     setAnalyzing(true);
+    setAnalysisError(null);
     picksApi
       .analyze({ sport, gameId })
       .then((data) => setAnalysis(data))
-      .catch((err) => console.error('Analysis failed:', err.message))
+      .catch((err) => {
+        setAnalysisError(err.message);
+        addToast(`Analysis failed: ${err.message}`, 'error');
+      })
       .finally(() => setAnalyzing(false));
   }
 
@@ -58,8 +69,7 @@ export default function GameDetail() {
   if (error) {
     return (
       <div className="text-center py-20">
-        <p className="text-red-400 mb-2">Failed to load game</p>
-        <p className="text-gray-500 text-sm">{error}</p>
+        <ErrorPanel message={`Failed to load game: ${error}`} onRetry={refetch} />
         <Link to="/games" className="text-indigo-400 text-sm mt-4 inline-block hover:underline">
           Back to games
         </Link>
@@ -143,7 +153,10 @@ export default function GameDetail() {
             }
           >
             {analyzing && <AnalysisProgress />}
-            {!analyzing && !analysis && (
+            {!analyzing && analysisError && (
+              <ErrorPanel message={analysisError} onRetry={runAnalysis} />
+            )}
+            {!analyzing && !analysis && !analysisError && (
               <div className="text-center py-8">
                 <p className="text-gray-500 text-sm">
                   Click "Run Analysis" to get AI-powered recommendations for this game.
@@ -217,6 +230,7 @@ function Section({ title, action, children }) {
 function RecommendationCard({ rec, sport, gameId }) {
   const [expanded, setExpanded] = useState(false);
   const [added, setAdded] = useState(false);
+  const { addToast } = useToast();
 
   const evNum = parseFloat(rec.expected_value);
   const evPositive = evNum > 0;
@@ -230,8 +244,11 @@ function RecommendationCard({ rec, sport, gameId }) {
   function addToBetSlip() {
     betslipApi
       .add({ ...rec, sport, gameId })
-      .then(() => setAdded(true))
-      .catch((err) => console.error('Failed to add to bet slip:', err.message));
+      .then(() => {
+        setAdded(true);
+        addToast('Pick added to bet slip', 'success');
+      })
+      .catch((err) => addToast(`Failed to add: ${err.message}`, 'error'));
   }
 
   return (

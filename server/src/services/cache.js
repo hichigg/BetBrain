@@ -11,6 +11,9 @@ export const TTL = {
 
 const cache = new NodeCache({ stdTTL: TTL.ESPN, checkperiod: 120 });
 
+/** Stale store — keeps values even after TTL expiry for fallback */
+const staleStore = new Map();
+
 let hits = 0;
 let misses = 0;
 
@@ -30,12 +33,23 @@ export function get(key) {
 }
 
 /**
+ * Get a stale (expired) value that was previously cached.
+ * Used as a fallback when a fresh fetch fails.
+ * @param {string} key
+ * @returns {any | undefined}
+ */
+export function getStale(key) {
+  return staleStore.get(key);
+}
+
+/**
  * Set a value in cache.
  * @param {string} key
  * @param {any} value
  * @param {number} [ttlSeconds] - TTL override; uses default if omitted
  */
 export function set(key, value, ttlSeconds) {
+  staleStore.set(key, value);
   if (ttlSeconds !== undefined) {
     cache.set(key, value, ttlSeconds);
   } else {
@@ -45,7 +59,7 @@ export function set(key, value, ttlSeconds) {
 
 /**
  * Check cache first; on miss, call fetchFn, cache the result, and return it.
- * Returns undefined only if fetchFn returns null/undefined (i.e. a failed fetch).
+ * On fetchFn failure, falls back to stale cache before returning null.
  *
  * @param {string} key
  * @param {() => Promise<any>} fetchFn - Called on cache miss
@@ -58,11 +72,24 @@ export async function getOrFetch(key, fetchFn, ttlSeconds) {
     return cached;
   }
 
-  const data = await fetchFn();
-  if (data != null) {
-    set(key, data, ttlSeconds);
+  try {
+    const data = await fetchFn();
+    if (data != null) {
+      set(key, data, ttlSeconds);
+      return data;
+    }
+  } catch (err) {
+    console.warn(`Cache getOrFetch failed for ${key}: ${err.message}`);
   }
-  return data;
+
+  // Attempt stale fallback
+  const stale = staleStore.get(key);
+  if (stale !== undefined) {
+    console.log(`Using stale cache for ${key}`);
+    return stale;
+  }
+
+  return undefined;
 }
 
 /**
@@ -84,6 +111,7 @@ export function stats() {
  */
 export function flush() {
   cache.flushAll();
+  staleStore.clear();
   hits = 0;
   misses = 0;
 }

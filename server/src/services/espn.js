@@ -1,4 +1,5 @@
 import { getOrFetch, keys, TTL } from './cache.js';
+import fetchWithTimeout, { TIMEOUTS } from '../utils/fetchWithTimeout.js';
 
 const BASE_URL = 'https://site.api.espn.com/apis/site/v2/sports';
 const SUMMARY_BASE_URL = 'https://site.web.api.espn.com/apis/site/v2/sports';
@@ -10,14 +11,18 @@ const SUMMARY_BASE_URL = 'https://site.web.api.espn.com/apis/site/v2/sports';
  */
 async function fetchJson(url) {
   try {
-    const res = await fetch(url);
+    const res = await fetchWithTimeout(url, {}, TIMEOUTS.ESPN);
     if (!res.ok) {
       console.error(`ESPN API error: ${res.status} ${res.statusText} — ${url}`);
       return null;
     }
     return await res.json();
   } catch (err) {
-    console.error(`ESPN fetch failed: ${err.message} — ${url}`);
+    if (err.message.startsWith('Request timed out')) {
+      console.error(`ESPN timeout: ${url}`);
+    } else {
+      console.error(`ESPN fetch failed: ${err.message} — ${url}`);
+    }
     return null;
   }
 }

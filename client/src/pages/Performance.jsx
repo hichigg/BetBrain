@@ -12,6 +12,7 @@ import {
   ReferenceLine,
 } from 'recharts';
 import usePerformance from '../hooks/usePerformance';
+import ErrorPanel from '../components/common/ErrorPanel';
 
 const RANGES = [
   { key: '7d', label: '7D' },
@@ -40,10 +41,22 @@ const BET_TYPE_LABELS = {
 
 export default function Performance() {
   const [range, setRange] = useState('30d');
-  const { summary, bySport, byBetType, byConfidence, roiData, loading } =
+  const { summary, bySport, byBetType, byConfidence, roiData, loading, error, refetch } =
     usePerformance(range);
 
   if (loading) return <PageSkeleton />;
+
+  if (error) {
+    return (
+      <div>
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-white mb-1">Performance</h1>
+          <p className="text-gray-500 text-sm">Track your record, ROI, and calibration</p>
+        </div>
+        <ErrorPanel message={`Failed to load performance data: ${error}`} onRetry={refetch} />
+      </div>
+    );
+  }
 
   const winPct =
     summary && summary.record.wins + summary.record.losses > 0

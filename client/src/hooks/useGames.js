@@ -1,10 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { gamesApi } from '../services/api';
 
 export default function useGames(sport, date) {
   const [games, setGames] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const refetch = useCallback(() => setRefreshKey((k) => k + 1), []);
 
   useEffect(() => {
     let cancelled = false;
@@ -26,7 +29,7 @@ export default function useGames(sport, date) {
     return () => {
       cancelled = true;
     };
-  }, [sport, date]);
+  }, [sport, date, refreshKey]);
 
-  return { games, loading, error };
+  return { games, loading, error, refetch };
 }

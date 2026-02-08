@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import PickCard from '../components/picks/PickCard';
 import SportFilterBar from '../components/common/SportFilterBar';
+import ErrorPanel from '../components/common/ErrorPanel';
 import { useTopPicks } from '../hooks/usePicks';
 import useGames from '../hooks/useGames';
 
@@ -56,8 +57,8 @@ function StatSkeleton() {
 
 export default function Dashboard() {
   const [date] = useState(todayStr);
-  const { picks: topPicks, loading: picksLoading } = useTopPicks(date, 5);
-  const { games, loading: gamesLoading } = useGames('all', date);
+  const { picks: topPicks, loading: picksLoading, error: picksError, refetch: refetchPicks } = useTopPicks(date, 5);
+  const { games, loading: gamesLoading, error: gamesError, refetch: refetchGames } = useGames('all', date);
 
   // Count games per sport
   const gameCounts = {};
@@ -82,6 +83,18 @@ export default function Dashboard() {
         <h1 className="text-2xl font-bold text-white mb-1">Dashboard</h1>
         <p className="text-gray-500 text-sm">{formatDate(date)}</p>
       </div>
+
+      {/* Errors */}
+      {gamesError && (
+        <div className="mb-4">
+          <ErrorPanel message={`Failed to load games: ${gamesError}`} onRetry={refetchGames} />
+        </div>
+      )}
+      {picksError && (
+        <div className="mb-4">
+          <ErrorPanel message={`Failed to load picks: ${picksError}`} onRetry={refetchPicks} />
+        </div>
+      )}
 
       {/* Stats row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">

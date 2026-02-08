@@ -1,4 +1,5 @@
 import { getOrFetch, TTL } from './cache.js';
+import fetchWithTimeout, { TIMEOUTS } from '../utils/fetchWithTimeout.js';
 
 const BASE = 'https://api.balldontlie.io';
 const API_KEY = process.env.BALLDONTLIE_API_KEY;
@@ -27,9 +28,11 @@ async function fetchBDL(path) {
   }
 
   try {
-    const res = await fetch(`${BASE}${path}`, {
-      headers: { Authorization: API_KEY },
-    });
+    const res = await fetchWithTimeout(
+      `${BASE}${path}`,
+      { headers: { Authorization: API_KEY } },
+      TIMEOUTS.BDL,
+    );
 
     if (!res.ok) {
       if (res.status === 429) {
@@ -43,7 +46,11 @@ async function fetchBDL(path) {
 
     return await res.json();
   } catch (err) {
-    console.error(`BallDontLie fetch failed: ${err.message}`);
+    if (err.message.startsWith('Request timed out')) {
+      console.error(`BallDontLie timeout: ${path}`);
+    } else {
+      console.error(`BallDontLie fetch failed: ${err.message}`);
+    }
     return null;
   }
 }

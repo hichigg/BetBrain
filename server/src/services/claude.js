@@ -2,6 +2,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { getOrFetch, keys, TTL } from './cache.js';
 import { getGamesForSport, getGameDetail } from './aggregator.js';
 import { SYSTEM_PROMPT } from '../prompts/base.js';
+import { TIMEOUTS } from '../utils/fetchWithTimeout.js';
 
 const PROMPT_MODULES = {
   nfl: () => import('../prompts/nfl.js'),
@@ -129,6 +130,7 @@ export async function analyzeGame(sport, gameData, detail = null) {
         temperature: TEMPERATURE,
         system: SYSTEM_PROMPT,
         messages: [{ role: 'user', content: userPrompt }],
+        timeout: TIMEOUTS.CLAUDE,
       });
 
       // Track token usage
@@ -152,11 +154,12 @@ export async function analyzeGame(sport, gameData, detail = null) {
 
       return { gameId: gameData.id, gameName: gameData.shortName || gameData.name, ...parsed };
     } catch (err) {
-      console.error(`Claude analysis failed [${sport}/${gameData.id}]:`, err.message);
+      const isTimeout = err.message?.includes('timeout') || err.message?.includes('timed out');
+      console.error(`Claude analysis ${isTimeout ? 'timed out' : 'failed'} [${sport}/${gameData.id}]:`, err.message);
       return {
         gameId: gameData.id,
         gameName: gameData.shortName || gameData.name,
-        game_summary: `Analysis failed: ${err.message}`,
+        game_summary: isTimeout ? 'Analysis unavailable — request timed out. Try again later.' : `Analysis failed: ${err.message}`,
         recommendations: [],
       };
     }
@@ -219,6 +222,7 @@ export async function analyzeGamesForSport(sport, date) {
         temperature: TEMPERATURE,
         system: SYSTEM_PROMPT,
         messages: [{ role: 'user', content: batchPrompt }],
+        timeout: TIMEOUTS.CLAUDE,
       });
 
       const usage = response.usage || {};
@@ -252,8 +256,15 @@ export async function analyzeGamesForSport(sport, date) {
         allPicks: tagged.sort((a, b) => b.confidence - a.confidence),
       };
     } catch (err) {
-      console.error(`Claude batch analysis failed [${sport}/${date}]:`, err.message);
-      return { sport, date, games: [], allPicks: [], message: `Analysis failed: ${err.message}` };
+      const isTimeout = err.message?.includes('timeout') || err.message?.includes('timed out');
+      console.error(`Claude batch analysis ${isTimeout ? 'timed out' : 'failed'} [${sport}/${date}]:`, err.message);
+      return {
+        sport,
+        date,
+        games: [],
+        allPicks: [],
+        message: isTimeout ? 'Analysis unavailable — request timed out. Try again later.' : `Analysis failed: ${err.message}`,
+      };
     }
   }, TTL.ANALYSIS);
 

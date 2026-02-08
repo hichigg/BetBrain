@@ -26,9 +26,26 @@ app.get('/api/odds/usage', (req, res) => {
   res.json({ success: true, data: getRemainingRequests() });
 });
 
-app.use((err, req, res, next) => {
-  console.error('Unhandled error:', err.message);
-  res.status(500).json({ success: false, error: 'Internal server error' });
+// 404 handler — must be after all routes
+app.use((req, res) => {
+  res.status(404).json({ success: false, error: `Not found: ${req.method} ${req.path}` });
+});
+
+// Error middleware
+app.use((err, req, res, _next) => {
+  const statusCode = err.statusCode || 500;
+  const isOperational = err.statusCode != null;
+
+  if (process.env.NODE_ENV !== 'production') {
+    console.error('Error:', err);
+  } else {
+    console.error(`Error [${statusCode}]: ${err.message}`);
+  }
+
+  res.status(statusCode).json({
+    success: false,
+    error: isOperational ? err.message : 'Internal server error',
+  });
 });
 
 app.listen(PORT, () => {
