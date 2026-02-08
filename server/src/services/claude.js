@@ -124,14 +124,16 @@ export async function analyzeGame(sport, gameData, detail = null) {
     const userPrompt = buildPrompt(gameData, detail);
 
     try {
-      const response = await client.messages.create({
-        model: MODEL,
-        max_tokens: MAX_TOKENS,
-        temperature: TEMPERATURE,
-        system: SYSTEM_PROMPT,
-        messages: [{ role: 'user', content: userPrompt }],
-        timeout: TIMEOUTS.CLAUDE,
-      });
+      const response = await client.messages.create(
+        {
+          model: MODEL,
+          max_tokens: MAX_TOKENS,
+          temperature: TEMPERATURE,
+          system: SYSTEM_PROMPT,
+          messages: [{ role: 'user', content: userPrompt }],
+        },
+        { timeout: TIMEOUTS.CLAUDE },
+      );
 
       // Track token usage
       const usage = response.usage || {};
@@ -216,14 +218,16 @@ export async function analyzeGamesForSport(sport, date) {
       gamePrompts.join('\n');
 
     try {
-      const response = await client.messages.create({
-        model: MODEL,
-        max_tokens: MAX_TOKENS * 2, // More tokens for batch
-        temperature: TEMPERATURE,
-        system: SYSTEM_PROMPT,
-        messages: [{ role: 'user', content: batchPrompt }],
-        timeout: TIMEOUTS.CLAUDE,
-      });
+      const response = await client.messages.create(
+        {
+          model: MODEL,
+          max_tokens: MAX_TOKENS * 2, // More tokens for batch
+          temperature: TEMPERATURE,
+          system: SYSTEM_PROMPT,
+          messages: [{ role: 'user', content: batchPrompt }],
+        },
+        { timeout: TIMEOUTS.CLAUDE },
+      );
 
       const usage = response.usage || {};
       totalInputTokens += usage.input_tokens || 0;
