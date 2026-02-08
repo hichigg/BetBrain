@@ -181,9 +181,9 @@ export async function analyzeGame(sport, gameData, detail = null) {
 export async function analyzeGamesForSport(sport, date) {
   const games = await getGamesForSport(sport, date);
 
-  // Filter to pre-game or in-progress games that have odds
+  // Filter to pre-game games that have odds (exclude in-progress and final)
   const analyzable = games.filter(
-    (g) => g.status?.state !== 'STATUS_FINAL' && g.odds,
+    (g) => g.status?.state === 'STATUS_SCHEDULED' && g.odds,
   );
 
   if (analyzable.length === 0) {
@@ -193,7 +193,7 @@ export async function analyzeGamesForSport(sport, date) {
       games: [],
       allPicks: [],
       message: games.length > 0
-        ? 'No analyzable games (all final or missing odds)'
+        ? 'No analyzable games (all in-progress, final, or missing odds)'
         : 'No games scheduled',
     };
   }
