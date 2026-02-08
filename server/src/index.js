@@ -5,6 +5,7 @@ import gamesRouter from './routes/games.js';
 import picksRouter from './routes/picks.js';
 import betslipRouter from './routes/betslip.js';
 import performanceRouter from './routes/performance.js';
+import { getRemainingRequests } from './services/odds.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -19,6 +20,10 @@ app.use('/api/performance', performanceRouter);
 
 app.get('/api/health', (req, res) => {
   res.json({ success: true, data: { status: 'ok' } });
+});
+
+app.get('/api/odds/usage', (req, res) => {
+  res.json({ success: true, data: getRemainingRequests() });
 });
 
 app.use((err, req, res, next) => {

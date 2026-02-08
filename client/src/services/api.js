@@ -48,6 +48,10 @@ export const betslipApi = {
   remove: (id) => request(`/betslip/${id}`, { method: 'DELETE' }),
 };
 
+export const oddsApi = {
+  usage: () => request('/odds/usage'),
+};
+
 export const performanceApi = {
   summary: (range = '7d') => request(`/performance/summary?range=${range}`),
   bySport: () => request('/performance/by-sport'),
