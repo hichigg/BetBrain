@@ -48,16 +48,6 @@ export default function BetSlip() {
     fetchSlips();
   }, [fetchSlips]);
 
-  function handleResult(id, result) {
-    betslipApi
-      .update(id, { result })
-      .then((updated) => {
-        setSlips((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
-        addToast(`Pick marked as ${result}`, 'success');
-      })
-      .catch((err) => addToast(`Failed to update: ${err.message}`, 'error'));
-  }
-
   function handleRemove(id) {
     betslipApi
       .remove(id)
@@ -92,7 +82,7 @@ export default function BetSlip() {
       <div>
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-white mb-1">My Bet Slip</h1>
-          <p className="text-gray-500 text-sm">Track your picks and monitor results</p>
+          <p className="text-gray-500 text-sm">Results are tracked automatically</p>
         </div>
         <ErrorPanel message={`Failed to load bet slip: ${error}`} onRetry={fetchSlips} />
       </div>
@@ -104,7 +94,7 @@ export default function BetSlip() {
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-white mb-1">My Bet Slip</h1>
         <p className="text-gray-500 text-sm">
-          Track your picks and monitor results
+          Results are tracked automatically
         </p>
       </div>
 
@@ -169,7 +159,6 @@ export default function BetSlip() {
             <SlipCard
               key={slip.id}
               slip={slip}
-              onResult={handleResult}
               onRemove={handleRemove}
             />
           ))}
@@ -181,7 +170,7 @@ export default function BetSlip() {
 
 // ── Sub-components ──────────────────────────────────────────────────
 
-function SlipCard({ slip, onResult, onRemove }) {
+function SlipCard({ slip, onRemove }) {
   const [confirming, setConfirming] = useState(false);
   const isPending = slip.result === 'pending';
 
@@ -236,11 +225,18 @@ function SlipCard({ slip, onResult, onRemove }) {
               </>
             )}
             {!isPending && (
-              <span
-                className={`ml-auto text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ring-1 ${resultBadge[slip.result]}`}
-              >
-                {slip.result}
-              </span>
+              <div className="ml-auto flex items-center gap-1.5">
+                <span
+                  className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ring-1 ${resultBadge[slip.result]}`}
+                >
+                  {slip.result}
+                </span>
+                {slip.resolvedBy === 'auto' && (
+                  <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-indigo-500/15 text-indigo-400 ring-1 ring-indigo-500/30">
+                    AUTO
+                  </span>
+                )}
+              </div>
             )}
           </div>
 
@@ -298,35 +294,8 @@ function SlipCard({ slip, onResult, onRemove }) {
             )}
           </div>
 
-          {/* Actions */}
-          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-            {isPending ? (
-              <>
-                <ResultButton
-                  label="Won"
-                  color="bg-emerald-600 hover:bg-emerald-500"
-                  onClick={() => onResult(slip.id, 'won')}
-                />
-                <ResultButton
-                  label="Lost"
-                  color="bg-red-600 hover:bg-red-500"
-                  onClick={() => onResult(slip.id, 'lost')}
-                />
-                <ResultButton
-                  label="Push"
-                  color="bg-amber-600 hover:bg-amber-500"
-                  onClick={() => onResult(slip.id, 'push')}
-                />
-              </>
-            ) : (
-              <button
-                onClick={() => onResult(slip.id, 'pending')}
-                className="px-3 py-2 text-[11px] text-gray-500 hover:text-gray-300 transition-colors"
-              >
-                Reset
-              </button>
-            )}
-
+          {/* Delete action */}
+          <div className="flex items-center">
             <div className="ml-auto">
               {confirming ? (
                 <div className="flex items-center gap-1.5">
@@ -364,17 +333,6 @@ function SlipCard({ slip, onResult, onRemove }) {
         </div>
       </div>
     </div>
-  );
-}
-
-function ResultButton({ label, color, onClick }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`px-3.5 py-2 text-[11px] font-medium text-white rounded-lg transition-colors ${color}`}
-    >
-      {label}
-    </button>
   );
 }
 

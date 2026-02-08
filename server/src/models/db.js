@@ -52,6 +52,13 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_analysis_log_date ON analysis_log(date);
 `);
 
+// Add resolved_by column if it doesn't exist (safe for restarts)
+try {
+  db.exec(`ALTER TABLE picks ADD COLUMN resolved_by TEXT DEFAULT NULL`);
+} catch {
+  // Column already exists — ignore
+}
+
 console.log('SQLite database initialized at', DB_PATH);
 
 export default db;

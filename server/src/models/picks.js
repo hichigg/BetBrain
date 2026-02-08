@@ -20,9 +20,17 @@ const updateResultStmt = db.prepare(`
 
 const deleteStmt = db.prepare('DELETE FROM picks WHERE id = ?');
 
+const getPendingStmt = db.prepare(
+  `SELECT * FROM picks WHERE result = 'pending' ORDER BY created_at ASC`,
+);
+
+const markResolvedStmt = db.prepare(`
+  UPDATE picks SET result = @result, profit_loss = @profit_loss, resolved_by = @resolved_by WHERE id = @id
+`);
+
 // ── Helpers ──────────────────────────────────────────────────────────
 
-function calcProfit(odds, units, result) {
+export function calcProfit(odds, units, result) {
   if (result === 'won') {
     const payout =
       odds > 0 ? units * (odds / 100) : units * (100 / Math.abs(odds));
@@ -145,4 +153,24 @@ export function deletePick(id) {
  */
 export function getPickById(id) {
   return getByIdStmt.get(id) || null;
+}
+
+/**
+ * Get all pending picks (for auto-resolution).
+ */
+export function getPendingPicks() {
+  return getPendingStmt.all();
+}
+
+/**
+ * Mark a pick as resolved with result, profit/loss, and who resolved it.
+ */
+export function markResolved(id, result, resolvedBy = 'auto') {
+  const existing = getByIdStmt.get(id);
+  if (!existing) return null;
+
+  const profit_loss = calcProfit(existing.odds, existing.units, result);
+  markResolvedStmt.run({ id, result, profit_loss, resolved_by: resolvedBy });
+
+  return { ...existing, result, profit_loss, resolved_by: resolvedBy };
 }

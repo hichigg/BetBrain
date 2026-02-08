@@ -5,6 +5,7 @@ import {
   updateResult,
   deletePick,
 } from '../models/picks.js';
+import { resolveAllPending } from '../services/resolver.js';
 
 const router = Router();
 
@@ -12,8 +13,15 @@ const router = Router();
  * GET /api/betslip?date=YYYY-MM-DD&sport=nba&result=pending
  * Returns saved picks with optional filters.
  */
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   try {
+    // Auto-resolve any pending picks before returning
+    try {
+      await resolveAllPending();
+    } catch (err) {
+      console.warn('Auto-resolve on GET /api/betslip failed:', err.message);
+    }
+
     const { date, sport, result } = req.query;
     const picks = getPicks({ date, sport, result });
 
@@ -131,6 +139,7 @@ function mapPickToResponse(row) {
     reasoning: row.reasoning,
     result: row.result,
     profit: row.profit_loss,
+    resolvedBy: row.resolved_by || null,
     timestamp: row.created_at,
   };
 }

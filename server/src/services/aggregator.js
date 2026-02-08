@@ -10,7 +10,7 @@ import { getOrFetch, getStale, TTL, keys } from './cache.js';
  * Normalize a team name to a comparable lowercase token.
  * Strips common suffixes, city aliases, punctuation.
  */
-function normalize(name) {
+export function normalize(name) {
   return name
     .toLowerCase()
     .replace(/[^a-z0-9 ]/g, '')
@@ -25,7 +25,7 @@ function normalize(name) {
  * Score how well two team name strings match.
  * Returns a value 0–1 where 1 is a perfect match.
  */
-function nameScore(a, b) {
+export function nameScore(a, b) {
   const na = normalize(a);
   const nb = normalize(b);
   if (na === nb) return 1;

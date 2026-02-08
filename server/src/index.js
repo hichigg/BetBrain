@@ -8,9 +8,10 @@ import betslipRouter from './routes/betslip.js';
 import performanceRouter from './routes/performance.js';
 import { getRemainingRequests } from './services/odds.js';
 import { stats as cacheStats } from './services/cache.js';
+import { resolveAllPending } from './services/resolver.js';
 
 // ── Validate required environment variables ────────────────────────
-const REQUIRED_ENV = ['ANTHROPIC_API_KEY', 'ODDS_API_KEY'];
+const REQUIRED_ENV = ['ANTHROPIC_API_KEY', 'ODDS_API_IO_KEY'];
 const missing = REQUIRED_ENV.filter((key) => !process.env[key]);
 if (missing.length > 0) {
   console.error(`Missing required environment variables: ${missing.join(', ')}`);
@@ -115,4 +116,23 @@ app.use((err, req, res, _next) => {
 
 app.listen(PORT, () => {
   console.log(`BetBrain server running on http://localhost:${PORT}`);
+
+  // Auto-resolve pending picks on startup (after 5s to let DB init)
+  setTimeout(async () => {
+    try {
+      const count = await resolveAllPending();
+      if (count > 0) console.log(`Startup auto-resolve: ${count} pick(s)`);
+    } catch (err) {
+      console.warn('Startup auto-resolve failed:', err.message);
+    }
+  }, 5000);
+
+  // Auto-resolve every 15 minutes
+  setInterval(async () => {
+    try {
+      await resolveAllPending();
+    } catch (err) {
+      console.warn('Interval auto-resolve failed:', err.message);
+    }
+  }, 15 * 60 * 1000);
 });
