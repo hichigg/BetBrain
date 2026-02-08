@@ -31,6 +31,12 @@ export const picksApi = {
   analyze: (body) =>
     request('/picks/analyze', { method: 'POST', body: JSON.stringify(body) }),
   getAll: (sport, date) => request(`/picks?sport=${sport}&date=${date}`),
+  top: (date, limit = 5) => {
+    const params = new URLSearchParams();
+    if (date) params.set('date', date);
+    params.set('limit', limit);
+    return request(`/picks/top?${params}`);
+  },
 };
 
 export const betslipApi = {
