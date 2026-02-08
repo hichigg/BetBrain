@@ -1,6 +1,8 @@
 import SPORT_MAPPINGS from '../utils/sportMappings.js';
 import * as espn from './espn.js';
 import { getOdds } from './odds.js';
+import { getTopPlayersForTeam, searchPlayers } from './balldontlie.js';
+import { getOrFetch, TTL } from './cache.js';
 
 // ── Team-name normalization for ESPN ↔ Odds API matching ────────────
 
@@ -142,6 +144,55 @@ function extractInjuriesForTeams(injuryData, teamIds) {
     }));
   }
   return result;
+}
+
+// ── BDL team ID resolution ───────────────────────────────────────────
+
+/**
+ * Resolve a BDL team ID from an ESPN team name by searching for a player on that team.
+ * Caches results for 60 min.
+ */
+async function resolveBdlTeamId(sport, teamName) {
+  if (!teamName) return null;
+
+  const cacheKey = `bdl:${sport}:teamId:${normalize(teamName)}`;
+  return getOrFetch(cacheKey, async () => {
+    // Search BDL for a player on this team — the player result includes team_id
+    const result = await searchPlayers(sport, teamName.split(' ').pop());
+    if (!result?.data?.length) return null;
+
+    // Find a player whose team name matches
+    for (const player of result.data) {
+      const bdlTeam = player.team?.full_name || player.team?.name || '';
+      if (nameScore(teamName, bdlTeam) >= 0.6) {
+        return player.team.id;
+      }
+    }
+    return null;
+  }, TTL.BDL);
+}
+
+/**
+ * Fetch top players for both teams. Returns { homePlayers, awayPlayers }.
+ * Fails gracefully — returns empty arrays on error.
+ */
+async function fetchPlayerData(sport, homeName, awayName) {
+  try {
+    const [homeTeamId, awayTeamId] = await Promise.all([
+      resolveBdlTeamId(sport, homeName),
+      resolveBdlTeamId(sport, awayName),
+    ]);
+
+    const [homePlayers, awayPlayers] = await Promise.all([
+      homeTeamId ? getTopPlayersForTeam(sport, homeTeamId, 5) : [],
+      awayTeamId ? getTopPlayersForTeam(sport, awayTeamId, 5) : [],
+    ]);
+
+    return { homePlayers: homePlayers || [], awayPlayers: awayPlayers || [] };
+  } catch (err) {
+    console.warn('BDL player data fetch failed:', err.message);
+    return { homePlayers: [], awayPlayers: [] };
+  }
 }
 
 // ── Public API ──────────────────────────────────────────────────────
@@ -361,6 +412,13 @@ export async function getGameDetail(sport, gameId) {
   // Boxscore if available
   const boxscore = summary.boxscore || null;
 
+  // Player-level data from BallDontLie (non-blocking)
+  const { homePlayers, awayPlayers } = await fetchPlayerData(
+    sport,
+    home.name,
+    away.name,
+  );
+
   return {
     id: gameId,
     sport,
@@ -386,6 +444,8 @@ export async function getGameDetail(sport, gameId) {
       ...away,
       seasonStats: parseSeasonStats(awaySeasonStats),
     },
+    homePlayers,
+    awayPlayers,
     injuries: {
       home: injuries[homeId] || [],
       away: injuries[awayId] || [],

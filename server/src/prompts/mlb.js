@@ -1,4 +1,4 @@
-import { formatOddsBlock, formatInjuries, formatStats, formatSeasonStats } from './base.js';
+import { formatOddsBlock, formatInjuries, formatStats, formatSeasonStats, formatPlayerStats } from './base.js';
 
 const MLB_INLINE_KEYS = [
   'runs', 'hits', 'errors', 'homeRuns', 'strikeouts',
@@ -13,13 +13,12 @@ const MLB_SEASON_KEYS = [
   'fieldingPct', 'errors', 'runsPerGame',
 ];
 
-/**
- * Build an MLB analysis prompt from aggregated game data.
- *
- * @param {object} game - Aggregated game object
- * @param {object} [detail] - Optional deep detail
- * @returns {string}
- */
+export const PLAYER_STAT_LABELS = {
+  hits: 'H', home_runs: 'HR', rbi: 'RBI', batting_avg: 'AVG',
+  obp: 'OBP', slg: 'SLG', stolen_bases: 'SB', strikeouts: 'K',
+  era: 'ERA', whip: 'WHIP',
+};
+
 export function buildPrompt(game, detail = null) {
   const { home, away, status, venue, odds, injuries } = game;
 
@@ -43,6 +42,13 @@ HOME/AWAY SPLITS:
   if (detail?.home?.seasonStats) {
     prompt += `${home.name} SEASON STATS:\n${formatSeasonStats(detail.home.seasonStats, MLB_SEASON_KEYS)}\n`;
     prompt += `${away.name} SEASON STATS:\n${formatSeasonStats(detail.away.seasonStats, MLB_SEASON_KEYS)}\n`;
+  }
+
+  if (game.homePlayers?.length) {
+    prompt += formatPlayerStats(game.homePlayers, home.name, PLAYER_STAT_LABELS);
+  }
+  if (game.awayPlayers?.length) {
+    prompt += formatPlayerStats(game.awayPlayers, away.name, PLAYER_STAT_LABELS);
   }
 
   prompt += `ODDS:\n${formatOddsBlock(odds)}\n`;
@@ -69,7 +75,14 @@ KEY MLB FACTORS TO ANALYZE:
 - Umpire tendencies if data available
 - Day vs night splits, travel schedule
 
-Analyze this MLB game. Evaluate moneyline, run line (spread), and over/under. Return your analysis as valid JSON.`;
+PLAYER PROPS TO CONSIDER:
+If player data is available, evaluate props for key performers:
+- Starting pitcher strikeouts (K total over/under)
+- Batter hits (total bases, hits over/under)
+- Home runs for power hitters vs vulnerable pitchers
+Only recommend player props where the data shows a clear edge.
+
+Analyze this MLB game. Evaluate moneyline, run line (spread), over/under, and player props. Return your analysis as valid JSON.`;
 
   return prompt;
 }

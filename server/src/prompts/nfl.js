@@ -1,4 +1,4 @@
-import { formatOddsBlock, formatInjuries, formatStats, formatSeasonStats } from './base.js';
+import { formatOddsBlock, formatInjuries, formatStats, formatSeasonStats, formatPlayerStats } from './base.js';
 
 const NFL_INLINE_KEYS = [
   'totalYards', 'passingYards', 'rushingYards', 'turnovers',
@@ -13,13 +13,12 @@ const NFL_SEASON_KEYS = [
   'timeOfPossession', 'firstDownsPerGame',
 ];
 
-/**
- * Build an NFL analysis prompt from aggregated game data.
- *
- * @param {object} game - Aggregated game object
- * @param {object} [detail] - Optional deep detail
- * @returns {string}
- */
+export const PLAYER_STAT_LABELS = {
+  pass_yds: 'Pass YDS', pass_td: 'Pass TD', rush_yds: 'Rush YDS',
+  rush_td: 'Rush TD', rec_yds: 'Rec YDS', rec_td: 'Rec TD',
+  sacks: 'Sacks', interceptions: 'INT',
+};
+
 export function buildPrompt(game, detail = null) {
   const { home, away, status, venue, odds, injuries } = game;
 
@@ -43,6 +42,13 @@ HOME/AWAY SPLITS:
   if (detail?.home?.seasonStats) {
     prompt += `${home.name} SEASON STATS:\n${formatSeasonStats(detail.home.seasonStats, NFL_SEASON_KEYS)}\n`;
     prompt += `${away.name} SEASON STATS:\n${formatSeasonStats(detail.away.seasonStats, NFL_SEASON_KEYS)}\n`;
+  }
+
+  if (game.homePlayers?.length) {
+    prompt += formatPlayerStats(game.homePlayers, home.name, PLAYER_STAT_LABELS);
+  }
+  if (game.awayPlayers?.length) {
+    prompt += formatPlayerStats(game.awayPlayers, away.name, PLAYER_STAT_LABELS);
   }
 
   prompt += `ODDS:\n${formatOddsBlock(odds)}\n`;
@@ -69,7 +75,15 @@ KEY NFL FACTORS TO ANALYZE:
 - Key injuries to QB, OL, and top defensive players
 - Divisional rivalries and schedule spots (trap games, letdown, lookahead)
 
-Analyze this NFL game. Evaluate moneyline, spread, and over/under. Return your analysis as valid JSON.`;
+PLAYER PROPS TO CONSIDER:
+If player data is available, evaluate props for key performers:
+- QB passing yards and passing TDs
+- RB rushing yards
+- WR/TE receiving yards
+- Anytime touchdown scorer
+Only recommend player props where the data shows a clear edge.
+
+Analyze this NFL game. Evaluate moneyline, spread, over/under, and player props. Return your analysis as valid JSON.`;
 
   return prompt;
 }

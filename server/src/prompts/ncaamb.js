@@ -1,4 +1,4 @@
-import { formatOddsBlock, formatInjuries, formatStats, formatSeasonStats } from './base.js';
+import { formatOddsBlock, formatInjuries, formatStats, formatSeasonStats, formatPlayerStats } from './base.js';
 
 const NCAAMB_INLINE_KEYS = [
   'avgPoints', 'points', 'avgRebounds', 'rebounds', 'avgAssists', 'assists',
@@ -12,13 +12,12 @@ const NCAAMB_SEASON_KEYS = [
   'avgFouls',
 ];
 
-/**
- * Build a College Basketball analysis prompt from aggregated game data.
- *
- * @param {object} game - Aggregated game object
- * @param {object} [detail] - Optional deep detail
- * @returns {string}
- */
+// NCAAB uses same NBA stat labels from BDL
+export const PLAYER_STAT_LABELS = {
+  pts: 'PPG', reb: 'RPG', ast: 'APG', stl: 'SPG', blk: 'BPG',
+  fg_pct: 'FG%', fg3_pct: '3PT%', ft_pct: 'FT%', turnover: 'TO', min: 'MIN',
+};
+
 export function buildPrompt(game, detail = null) {
   const { home, away, status, venue, odds, injuries } = game;
 
@@ -42,6 +41,13 @@ HOME/AWAY SPLITS:
   if (detail?.home?.seasonStats) {
     prompt += `${home.name} SEASON STATS:\n${formatSeasonStats(detail.home.seasonStats, NCAAMB_SEASON_KEYS)}\n`;
     prompt += `${away.name} SEASON STATS:\n${formatSeasonStats(detail.away.seasonStats, NCAAMB_SEASON_KEYS)}\n`;
+  }
+
+  if (game.homePlayers?.length) {
+    prompt += formatPlayerStats(game.homePlayers, home.name, PLAYER_STAT_LABELS);
+  }
+  if (game.awayPlayers?.length) {
+    prompt += formatPlayerStats(game.awayPlayers, away.name, PLAYER_STAT_LABELS);
   }
 
   prompt += `ODDS:\n${formatOddsBlock(odds)}\n`;

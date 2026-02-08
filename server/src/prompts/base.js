@@ -17,7 +17,8 @@ Key principles:
 - Consider injuries, home/away splits, rest days, and schedule context.
 - Negative EV bets should never be recommended regardless of how "obvious" a pick seems.
 - When data is insufficient, lower confidence and say why.
-- Evaluate all bet types: moneyline, spread, over/under. Mention player props only if the data supports a specific angle.
+- Evaluate all bet types: moneyline, spread, over/under, and player props.
+- For player props, only recommend when player-level data clearly supports an edge (e.g. a player averaging well above/below a prop line based on recent form, matchup, or pace).
 
 You MUST respond with valid JSON only — no markdown, no commentary outside the JSON structure.
 
@@ -136,6 +137,32 @@ export function formatStats(stats, preferredKeys = []) {
   }
 
   return lines.join('\n') + '\n';
+}
+
+/**
+ * Format top player stats for a team into a readable block.
+ *
+ * @param {object[]} players - Array of { name, position, stats: { key: value } }
+ * @param {string} teamName
+ * @param {object} sportLabels - Map of stat key → display label
+ * @returns {string}
+ */
+export function formatPlayerStats(players, teamName, sportLabels = {}) {
+  if (!players?.length) return '';
+
+  let block = `${teamName} KEY PLAYERS:\n`;
+  for (const p of players) {
+    const pos = p.position ? ` (${p.position})` : '';
+    const statParts = Object.entries(p.stats || {})
+      .filter(([, v]) => v != null)
+      .map(([k, v]) => {
+        const label = sportLabels[k] || k;
+        const val = typeof v === 'number' ? (Number.isInteger(v) ? v : v.toFixed(1)) : v;
+        return `${label}: ${val}`;
+      });
+    block += `  ${p.name}${pos} — ${statParts.join(', ')}\n`;
+  }
+  return block + '\n';
 }
 
 /**

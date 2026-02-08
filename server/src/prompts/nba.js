@@ -1,4 +1,4 @@
-import { formatOddsBlock, formatInjuries, formatStats, formatSeasonStats } from './base.js';
+import { formatOddsBlock, formatInjuries, formatStats, formatSeasonStats, formatPlayerStats } from './base.js';
 
 const NBA_INLINE_KEYS = [
   'avgPoints', 'points', 'avgRebounds', 'rebounds', 'avgAssists', 'assists',
@@ -12,12 +12,13 @@ const NBA_SEASON_KEYS = [
   'avgFouls', 'plusMinus',
 ];
 
+export const PLAYER_STAT_LABELS = {
+  pts: 'PPG', reb: 'RPG', ast: 'APG', stl: 'SPG', blk: 'BPG',
+  fg_pct: 'FG%', fg3_pct: '3PT%', ft_pct: 'FT%', turnover: 'TO', min: 'MIN',
+};
+
 /**
  * Build an NBA analysis prompt from aggregated game data.
- *
- * @param {object} game - Aggregated game object from the aggregator
- * @param {object} [detail] - Optional deep detail from getGameDetail
- * @returns {string} The user prompt for Claude
  */
 export function buildPrompt(game, detail = null) {
   const { home, away, status, venue, odds, injuries } = game;
@@ -34,16 +35,22 @@ HOME/AWAY SPLITS:
 
 `;
 
-  // Inline stats from scoreboard
   if (Object.keys(home.stats || {}).length > 0) {
     prompt += `${home.name} GAME/RECENT STATS:\n${formatStats(home.stats, NBA_INLINE_KEYS)}\n`;
     prompt += `${away.name} GAME/RECENT STATS:\n${formatStats(away.stats, NBA_INLINE_KEYS)}\n`;
   }
 
-  // Deep season stats if available
   if (detail?.home?.seasonStats) {
     prompt += `${home.name} SEASON STATS:\n${formatSeasonStats(detail.home.seasonStats, NBA_SEASON_KEYS)}\n`;
     prompt += `${away.name} SEASON STATS:\n${formatSeasonStats(detail.away.seasonStats, NBA_SEASON_KEYS)}\n`;
+  }
+
+  // Player-level data
+  if (game.homePlayers?.length) {
+    prompt += formatPlayerStats(game.homePlayers, home.name, PLAYER_STAT_LABELS);
+  }
+  if (game.awayPlayers?.length) {
+    prompt += formatPlayerStats(game.awayPlayers, away.name, PLAYER_STAT_LABELS);
   }
 
   prompt += `ODDS:\n${formatOddsBlock(odds)}\n`;
@@ -68,7 +75,15 @@ KEY NBA FACTORS TO ANALYZE:
 - Back-to-back or rest day advantage
 - Key player injuries and their impact on rotations
 
-Analyze this NBA game. Evaluate moneyline, spread, and over/under. Return your analysis as valid JSON.`;
+PLAYER PROPS TO CONSIDER:
+If player data is available above, evaluate player props for the top performers:
+- Points (over/under their season average based on matchup and pace)
+- Rebounds (especially vs poor rebounding teams)
+- Assists (especially vs teams that allow high assist rates)
+- Combined PRA (points + rebounds + assists)
+Only recommend player props where the data shows a clear edge.
+
+Analyze this NBA game. Evaluate moneyline, spread, over/under, and player props. Return your analysis as valid JSON.`;
 
   return prompt;
 }

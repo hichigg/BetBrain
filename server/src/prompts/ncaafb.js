@@ -1,4 +1,4 @@
-import { formatOddsBlock, formatInjuries, formatStats, formatSeasonStats } from './base.js';
+import { formatOddsBlock, formatInjuries, formatStats, formatSeasonStats, formatPlayerStats } from './base.js';
 
 const NCAAFB_INLINE_KEYS = [
   'totalYards', 'passingYards', 'rushingYards', 'turnovers',
@@ -13,13 +13,12 @@ const NCAAFB_SEASON_KEYS = [
   'timeOfPossession',
 ];
 
-/**
- * Build a College Football analysis prompt from aggregated game data.
- *
- * @param {object} game - Aggregated game object
- * @param {object} [detail] - Optional deep detail
- * @returns {string}
- */
+export const PLAYER_STAT_LABELS = {
+  pass_yds: 'Pass YDS', pass_td: 'Pass TD', rush_yds: 'Rush YDS',
+  rush_td: 'Rush TD', rec_yds: 'Rec YDS', rec_td: 'Rec TD',
+  sacks: 'Sacks', interceptions: 'INT',
+};
+
 export function buildPrompt(game, detail = null) {
   const { home, away, status, venue, odds, injuries } = game;
 
@@ -43,6 +42,13 @@ HOME/AWAY SPLITS:
   if (detail?.home?.seasonStats) {
     prompt += `${home.name} SEASON STATS:\n${formatSeasonStats(detail.home.seasonStats, NCAAFB_SEASON_KEYS)}\n`;
     prompt += `${away.name} SEASON STATS:\n${formatSeasonStats(detail.away.seasonStats, NCAAFB_SEASON_KEYS)}\n`;
+  }
+
+  if (game.homePlayers?.length) {
+    prompt += formatPlayerStats(game.homePlayers, home.name, PLAYER_STAT_LABELS);
+  }
+  if (game.awayPlayers?.length) {
+    prompt += formatPlayerStats(game.awayPlayers, away.name, PLAYER_STAT_LABELS);
   }
 
   prompt += `ODDS:\n${formatOddsBlock(odds)}\n`;

@@ -1,4 +1,4 @@
-import { formatOddsBlock, formatInjuries, formatStats, formatSeasonStats } from './base.js';
+import { formatOddsBlock, formatInjuries, formatStats, formatSeasonStats, formatPlayerStats } from './base.js';
 
 const NHL_INLINE_KEYS = [
   'goals', 'shots', 'powerPlayGoals', 'powerPlayOpportunities',
@@ -14,13 +14,11 @@ const NHL_SEASON_KEYS = [
   'overtimeLosses', 'pointPct',
 ];
 
-/**
- * Build an NHL analysis prompt from aggregated game data.
- *
- * @param {object} game - Aggregated game object
- * @param {object} [detail] - Optional deep detail
- * @returns {string}
- */
+export const PLAYER_STAT_LABELS = {
+  goals: 'G', assists: 'A', points: 'PTS', plus_minus: '+/-',
+  shots: 'SOG', hits: 'HIT', blocked_shots: 'BLK', save_pct: 'SV%',
+};
+
 export function buildPrompt(game, detail = null) {
   const { home, away, status, venue, odds, injuries } = game;
 
@@ -44,6 +42,13 @@ HOME/AWAY SPLITS:
   if (detail?.home?.seasonStats) {
     prompt += `${home.name} SEASON STATS:\n${formatSeasonStats(detail.home.seasonStats, NHL_SEASON_KEYS)}\n`;
     prompt += `${away.name} SEASON STATS:\n${formatSeasonStats(detail.away.seasonStats, NHL_SEASON_KEYS)}\n`;
+  }
+
+  if (game.homePlayers?.length) {
+    prompt += formatPlayerStats(game.homePlayers, home.name, PLAYER_STAT_LABELS);
+  }
+  if (game.awayPlayers?.length) {
+    prompt += formatPlayerStats(game.awayPlayers, away.name, PLAYER_STAT_LABELS);
   }
 
   prompt += `ODDS:\n${formatOddsBlock(odds)}\n`;
@@ -70,7 +75,14 @@ KEY NHL FACTORS TO ANALYZE:
 - Key injuries to top-6 forwards, top-4 defensemen, and starting goalie
 - Special teams performance trends
 
-Analyze this NHL game. Evaluate moneyline, puck line (spread), and over/under. Return your analysis as valid JSON.`;
+PLAYER PROPS TO CONSIDER:
+If player data is available, evaluate props for key performers:
+- Shots on goal for high-volume shooters
+- Points (goals + assists) for top scorers
+- Goalie saves if facing a high-shot team
+Only recommend player props where the data shows a clear edge.
+
+Analyze this NHL game. Evaluate moneyline, puck line (spread), over/under, and player props. Return your analysis as valid JSON.`;
 
   return prompt;
 }
