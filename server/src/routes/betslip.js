@@ -1,49 +1,29 @@
 import { Router } from 'express';
-import crypto from 'crypto';
+import {
+  savePick,
+  getPicks,
+  updateResult,
+  deletePick,
+} from '../models/picks.js';
 
 const router = Router();
 
-// ── In-memory store (replaced by SQLite in Phase 4) ─────────────────
-
-const slips = [];
-
-// ── Helpers ──────────────────────────────────────────────────────────
-
-function findIndex(id) {
-  return slips.findIndex((s) => s.id === id);
-}
-
-function calcProfit(slip) {
-  if (slip.result === 'won') {
-    const odds = slip.odds;
-    const payout =
-      odds > 0 ? slip.units * (odds / 100) : slip.units * (100 / Math.abs(odds));
-    return parseFloat(payout.toFixed(2));
-  }
-  if (slip.result === 'lost') return -slip.units;
-  return 0; // push or pending
-}
-
-// ── Routes ───────────────────────────────────────────────────────────
-
 /**
- * GET /api/betslip?date=YYYY-MM-DD
- * Returns all saved picks, optionally filtered by date.
+ * GET /api/betslip?date=YYYY-MM-DD&sport=nba&result=pending
+ * Returns saved picks with optional filters.
  */
 router.get('/', (req, res) => {
-  const { date } = req.query;
-  let result = slips;
+  try {
+    const { date, sport, result } = req.query;
+    const picks = getPicks({ date, sport, result });
 
-  if (date) {
-    result = slips.filter((s) => s.timestamp.startsWith(date));
+    // Map DB column names to what the frontend expects
+    const data = picks.map(mapPickToResponse);
+    res.json({ success: true, data });
+  } catch (err) {
+    console.error('GET /api/betslip error:', err.message);
+    res.status(500).json({ success: false, error: 'Failed to fetch picks' });
   }
-
-  // Newest first
-  result = [...result].sort(
-    (a, b) => new Date(b.timestamp) - new Date(a.timestamp),
-  );
-
-  res.json({ success: true, data: result });
 });
 
 /**
@@ -51,74 +31,64 @@ router.get('/', (req, res) => {
  * Save a pick to the bet slip.
  */
 router.post('/', (req, res) => {
-  const {
-    sport,
-    gameId,
-    gameName,
-    pick,
-    bet_type,
-    odds,
-    confidence,
-    expected_value,
-    risk_tier,
-    units,
-    reasoning,
-  } = req.body;
+  try {
+    const { pick, odds, units } = req.body;
 
-  if (!pick || odds == null || !units) {
-    return res
-      .status(400)
-      .json({ success: false, error: 'Missing required fields: pick, odds, units' });
+    if (!pick || odds == null || !units) {
+      return res
+        .status(400)
+        .json({ success: false, error: 'Missing required fields: pick, odds, units' });
+    }
+
+    const saved = savePick({
+      game_id: req.body.gameId,
+      sport: req.body.sport,
+      date: new Date().toISOString().split('T')[0],
+      home_team: req.body.homeTeam,
+      away_team: req.body.awayTeam,
+      game_name: req.body.gameName,
+      bet_type: req.body.bet_type,
+      pick,
+      odds,
+      confidence: req.body.confidence,
+      expected_value: req.body.expected_value,
+      risk_tier: req.body.risk_tier,
+      units,
+      reasoning: req.body.reasoning,
+    });
+
+    res.status(201).json({ success: true, data: mapPickToResponse(saved) });
+  } catch (err) {
+    console.error('POST /api/betslip error:', err.message);
+    res.status(500).json({ success: false, error: 'Failed to save pick' });
   }
-
-  const slip = {
-    id: crypto.randomUUID(),
-    sport: sport || null,
-    gameId: gameId || null,
-    gameName: gameName || null,
-    pick,
-    bet_type: bet_type || 'moneyline',
-    odds: typeof odds === 'number' ? odds : parseFloat(odds) || 0,
-    confidence: confidence != null ? Number(confidence) : null,
-    expected_value: expected_value || null,
-    risk_tier: risk_tier || null,
-    units: parseFloat(units) || 1,
-    reasoning: reasoning || null,
-    result: 'pending', // pending | won | lost | push
-    profit: 0,
-    timestamp: new Date().toISOString(),
-  };
-
-  slips.push(slip);
-  res.status(201).json({ success: true, data: slip });
 });
 
 /**
  * PATCH /api/betslip/:id
- * Update result (won/lost/push) and recalculate profit.
+ * Update result (won/lost/push/pending) and recalculate profit.
  */
 router.patch('/:id', (req, res) => {
-  const { id } = req.params;
-  const idx = findIndex(id);
+  try {
+    const { id } = req.params;
+    const { result } = req.body;
 
-  if (idx === -1) {
-    return res.status(404).json({ success: false, error: 'Pick not found' });
+    if (result && !['pending', 'won', 'lost', 'push'].includes(result)) {
+      return res
+        .status(400)
+        .json({ success: false, error: 'Invalid result. Use: won, lost, push, pending' });
+    }
+
+    const updated = updateResult(id, result);
+    if (!updated) {
+      return res.status(404).json({ success: false, error: 'Pick not found' });
+    }
+
+    res.json({ success: true, data: mapPickToResponse(updated) });
+  } catch (err) {
+    console.error('PATCH /api/betslip/:id error:', err.message);
+    res.status(500).json({ success: false, error: 'Failed to update pick' });
   }
-
-  const { result } = req.body;
-
-  if (result && !['pending', 'won', 'lost', 'push'].includes(result)) {
-    return res
-      .status(400)
-      .json({ success: false, error: 'Invalid result. Use: won, lost, push, pending' });
-  }
-
-  if (result) {
-    slips[idx].result = result;
-    slips[idx].profit = calcProfit(slips[idx]);
-  }
-
-  res.json({ success: true, data: slips[idx] });
 });
 
 /**
@@ -126,15 +96,43 @@ router.patch('/:id', (req, res) => {
  * Remove a pick from the bet slip.
  */
 router.delete('/:id', (req, res) => {
-  const { id } = req.params;
-  const idx = findIndex(id);
+  try {
+    const { id } = req.params;
+    const removed = deletePick(id);
 
-  if (idx === -1) {
-    return res.status(404).json({ success: false, error: 'Pick not found' });
+    if (!removed) {
+      return res.status(404).json({ success: false, error: 'Pick not found' });
+    }
+
+    res.json({ success: true, data: mapPickToResponse(removed) });
+  } catch (err) {
+    console.error('DELETE /api/betslip/:id error:', err.message);
+    res.status(500).json({ success: false, error: 'Failed to delete pick' });
   }
-
-  const [removed] = slips.splice(idx, 1);
-  res.json({ success: true, data: removed });
 });
+
+// ── Response mapper ──────────────────────────────────────────────────
+
+function mapPickToResponse(row) {
+  return {
+    id: row.id,
+    sport: row.sport,
+    gameId: row.game_id,
+    gameName: row.game_name,
+    homeTeam: row.home_team,
+    awayTeam: row.away_team,
+    pick: row.pick,
+    bet_type: row.bet_type,
+    odds: row.odds,
+    confidence: row.confidence,
+    expected_value: row.expected_value,
+    risk_tier: row.risk_tier,
+    units: row.units,
+    reasoning: row.reasoning,
+    result: row.result,
+    profit: row.profit_loss,
+    timestamp: row.created_at,
+  };
+}
 
 export default router;
