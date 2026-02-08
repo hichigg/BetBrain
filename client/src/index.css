@@ -16,3 +16,12 @@
 .animate-slide-in {
   animation: slide-in 0.25s ease-out;
 }
+
+/* Hide scrollbar for horizontal scroll containers on mobile */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

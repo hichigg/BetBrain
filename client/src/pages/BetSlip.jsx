@@ -110,7 +110,7 @@ export default function BetSlip() {
 
       {/* Summary bar */}
       {slips.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 sm:gap-3 mb-6">
           <StatCard label="Total Picks" value={slips.length} />
           <StatCard
             label="Record"
@@ -250,7 +250,7 @@ function SlipCard({ slip, onResult, onRemove }) {
           </p>
 
           {/* Stats */}
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs mb-3">
+          <div className="flex flex-wrap items-center gap-x-2 sm:gap-x-4 gap-y-1 text-xs mb-3">
             <span className="text-gray-400">
               {BET_TYPE_LABELS[slip.bet_type] || slip.bet_type}
             </span>
@@ -299,7 +299,7 @@ function SlipCard({ slip, onResult, onRemove }) {
           </div>
 
           {/* Actions */}
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
             {isPending ? (
               <>
                 <ResultButton
@@ -321,7 +321,7 @@ function SlipCard({ slip, onResult, onRemove }) {
             ) : (
               <button
                 onClick={() => onResult(slip.id, 'pending')}
-                className="px-3 py-1.5 text-[11px] text-gray-500 hover:text-gray-300 transition-colors"
+                className="px-3 py-2 text-[11px] text-gray-500 hover:text-gray-300 transition-colors"
               >
                 Reset
               </button>
@@ -371,7 +371,7 @@ function ResultButton({ label, color, onClick }) {
   return (
     <button
       onClick={onClick}
-      className={`px-3 py-1.5 text-[11px] font-medium text-white rounded-lg transition-colors ${color}`}
+      className={`px-3.5 py-2 text-[11px] font-medium text-white rounded-lg transition-colors ${color}`}
     >
       {label}
     </button>
@@ -380,11 +380,11 @@ function ResultButton({ label, color, onClick }) {
 
 function StatCard({ label, value, color = 'text-white' }) {
   return (
-    <div className="bg-gray-800/50 rounded-xl border border-gray-700/40 px-4 py-4">
-      <p className="text-[11px] font-medium text-gray-500 uppercase tracking-wider mb-1">
+    <div className="bg-gray-800/50 rounded-xl border border-gray-700/40 px-3 sm:px-4 py-3 sm:py-4">
+      <p className="text-[10px] sm:text-[11px] font-medium text-gray-500 uppercase tracking-wider mb-1">
         {label}
       </p>
-      <p className={`text-2xl font-bold ${color}`}>{value}</p>
+      <p className={`text-xl sm:text-2xl font-bold ${color}`}>{value}</p>
     </div>
   );
 }
@@ -428,7 +428,7 @@ function PageSkeleton() {
         <div className="h-7 w-40 bg-gray-800 rounded mb-2" />
         <div className="h-4 w-56 bg-gray-800/60 rounded" />
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 sm:gap-3 mb-6">
         {Array.from({ length: 5 }).map((_, i) => (
           <div
             key={i}

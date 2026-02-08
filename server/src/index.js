@@ -9,6 +9,25 @@ import performanceRouter from './routes/performance.js';
 import { getRemainingRequests } from './services/odds.js';
 import { stats as cacheStats } from './services/cache.js';
 
+// ── Validate required environment variables ────────────────────────
+const REQUIRED_ENV = ['ANTHROPIC_API_KEY', 'ODDS_API_KEY'];
+const missing = REQUIRED_ENV.filter((key) => !process.env[key]);
+if (missing.length > 0) {
+  console.error(`Missing required environment variables: ${missing.join(', ')}`);
+  console.error('Server cannot start without these. Check your .env file.');
+  process.exit(1);
+}
+
+// ── Global process error handlers ──────────────────────────────────
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled Promise Rejection:', reason);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err);
+  process.exit(1);
+});
+
 const app = express();
 const PORT = process.env.PORT || 3001;
 const isProd = process.env.NODE_ENV === 'production';

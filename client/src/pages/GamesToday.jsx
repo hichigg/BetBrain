@@ -199,9 +199,9 @@ function TeamRow({ team, mlPrice, spreadLine, isFinal }) {
 
 function EmptyState({ sport, date }) {
   return (
-    <div className="text-center py-20">
+    <div className="text-center py-12 sm:py-20">
       <div className="text-4xl mb-3 opacity-40">&#127944;</div>
-      <p className="text-gray-400 text-lg font-medium">No games scheduled</p>
+      <p className="text-gray-400 text-base sm:text-lg font-medium">No games scheduled</p>
       <p className="text-gray-600 text-sm mt-1">
         {sport === 'all' ? 'No games found' : `No ${sport.toUpperCase()} games`}{' '}
         for {date}
@@ -231,7 +231,7 @@ export default function GamesToday() {
       </div>
 
       {/* Sport tabs */}
-      <div className="flex gap-1 mb-6 overflow-x-auto pb-1">
+      <div className="flex gap-1 mb-6 overflow-x-auto pb-1 scrollbar-hide">
         {SPORTS.map((s) => (
           <button
             key={s.key}
@@ -256,7 +256,7 @@ export default function GamesToday() {
 
       {/* Loading skeletons */}
       {loading && (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
           {Array.from({ length: 6 }).map((_, i) => (
             <SkeletonCard key={i} />
           ))}
@@ -265,7 +265,7 @@ export default function GamesToday() {
 
       {/* Games grid */}
       {!loading && !error && games.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
           {games.map((game) => (
             <GameCard key={game.id} game={game} />
           ))}

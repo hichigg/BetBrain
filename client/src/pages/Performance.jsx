@@ -102,7 +102,7 @@ export default function Performance() {
 
       {/* Summary cards */}
       {summary && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-3 mb-8">
           <StatCard label="Total Picks" value={summary.totalPicks} />
           <StatCard
             label="Record"
@@ -318,7 +318,7 @@ export default function Performance() {
                 </ResponsiveContainer>
               </div>
               {/* Calibration legend */}
-              <div className="flex items-center gap-6 mt-3 justify-center">
+              <div className="flex items-center gap-4 sm:gap-6 mt-3 justify-center flex-wrap">
                 <div className="flex items-center gap-2">
                   <span className="w-3 h-3 rounded-sm bg-indigo-600 opacity-40" />
                   <span className="text-xs text-gray-500">Expected Win %</span>
@@ -340,11 +340,11 @@ export default function Performance() {
 
 function StatCard({ label, value, color = 'text-white' }) {
   return (
-    <div className="bg-gray-800/50 rounded-xl border border-gray-700/40 px-4 py-4">
-      <p className="text-[11px] font-medium text-gray-500 uppercase tracking-wider mb-1">
+    <div className="bg-gray-800/50 rounded-xl border border-gray-700/40 px-3 sm:px-4 py-3 sm:py-4">
+      <p className="text-[10px] sm:text-[11px] font-medium text-gray-500 uppercase tracking-wider mb-1">
         {label}
       </p>
-      <p className={`text-xl font-bold ${color}`}>{value}</p>
+      <p className={`text-lg sm:text-xl font-bold ${color}`}>{value}</p>
     </div>
   );
 }
@@ -365,7 +365,7 @@ function Section({ title, className = '', children }) {
 function Th({ children, align = 'center' }) {
   return (
     <th
-      className={`px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider ${
+      className={`px-2 sm:px-3 py-2 text-[10px] sm:text-xs font-semibold text-gray-500 uppercase tracking-wider ${
         align === 'left' ? 'text-left' : 'text-center'
       }`}
     >
@@ -377,7 +377,7 @@ function Th({ children, align = 'center' }) {
 function Td({ children, align = 'center', bold = false, color = '' }) {
   return (
     <td
-      className={`px-3 py-2.5 text-sm ${align === 'left' ? 'text-left' : 'text-center'} ${
+      className={`px-2 sm:px-3 py-2 sm:py-2.5 text-xs sm:text-sm ${align === 'left' ? 'text-left' : 'text-center'} ${
         bold ? 'font-medium text-gray-200' : color || 'text-gray-400'
       }`}
     >
@@ -456,7 +456,7 @@ function PageSkeleton() {
         </div>
         <div className="h-9 w-44 bg-gray-800/50 rounded-lg" />
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-8">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-3 mb-8">
         {Array.from({ length: 6 }).map((_, i) => (
           <div key={i} className="bg-gray-800/50 rounded-xl border border-gray-700/40 px-4 py-4">
             <div className="h-3 w-14 bg-gray-700 rounded mb-3" />

@@ -13,7 +13,7 @@ function SportFilterBar({ gameCounts = {}, activeSport, onSelect, linkMode = fal
   const sports = visibleSports ? SPORTS.filter((s) => visibleSports.includes(s.key)) : SPORTS;
 
   return (
-    <div className="flex gap-2 overflow-x-auto pb-1">
+    <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
       {sports.map((s) => {
         const count = gameCounts[s.key] ?? null;
         const isActive = activeSport === s.key;

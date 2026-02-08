@@ -97,8 +97,11 @@ export default function Settings() {
               min="0"
               step="100"
               value={settings.bankroll}
-              onChange={(e) => updateSettings({ bankroll: Math.max(0, Number(e.target.value)) })}
-              className="w-40 pl-7 pr-3 py-2 bg-gray-800 border border-gray-700/60 rounded-lg text-gray-200 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+              onChange={(e) => {
+                const val = Number(e.target.value);
+                if (!Number.isNaN(val)) updateSettings({ bankroll: Math.max(0, val) });
+              }}
+              className="w-full sm:w-40 pl-7 pr-3 py-2.5 bg-gray-800 border border-gray-700/60 rounded-lg text-gray-200 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
             />
           </div>
         </div>
@@ -147,7 +150,7 @@ export default function Settings() {
               <button
                 key={sport.key}
                 onClick={() => toggleSport(sport.key)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                className={`px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                   active
                     ? 'bg-indigo-600 text-white'
                     : 'bg-gray-800/70 text-gray-500 hover:text-gray-300 border border-gray-700/40'
@@ -165,7 +168,7 @@ export default function Settings() {
         title="Display Preferences"
         description="Choose how odds are displayed throughout the app."
       >
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           {ODDS_FORMATS.map((fmt) => {
             const active = settings.oddsFormat === fmt.key;
             return (

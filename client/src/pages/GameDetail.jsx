@@ -89,19 +89,19 @@ export default function GameDetail() {
       </Link>
 
       {/* ── Header ──────────────────────────────────────────── */}
-      <div className="bg-gray-800/50 rounded-2xl border border-gray-700/40 p-6 mb-6">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
+      <div className="bg-gray-800/50 rounded-2xl border border-gray-700/40 p-4 sm:p-6 mb-6">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6">
           {/* Away team */}
-          <div className="flex items-center gap-3 flex-1 justify-end sm:justify-end">
+          <div className="flex items-center gap-3 flex-1 justify-center sm:justify-end">
             <div className="text-right">
-              <p className="font-semibold text-gray-100">{away.name}</p>
+              <p className="font-semibold text-gray-100 text-sm sm:text-base">{away.name}</p>
               <p className="text-xs text-gray-500">{away.record}</p>
             </div>
-            {away.logo && <img src={away.logo} alt="" className="w-14 h-14 object-contain" />}
+            {away.logo && <img src={away.logo} alt="" className="w-10 h-10 sm:w-14 sm:h-14 object-contain" />}
           </div>
 
           {/* Center info */}
-          <div className="text-center flex-shrink-0 px-6">
+          <div className="text-center flex-shrink-0 px-2 sm:px-6">
             <p className="text-[10px] font-bold uppercase tracking-widest text-indigo-400 mb-1">
               {sport?.toUpperCase()}
             </p>
@@ -109,24 +109,24 @@ export default function GameDetail() {
               {status?.detail || formatGameTime(date)}
             </p>
             {venue && (
-              <p className="text-[11px] text-gray-600 mt-1">
+              <p className="text-[11px] text-gray-600 mt-1 hidden sm:block">
                 {venue.name}{venue.city ? `, ${venue.city}` : ''}
               </p>
             )}
           </div>
 
           {/* Home team */}
-          <div className="flex items-center gap-3 flex-1 justify-start sm:justify-start">
-            {home.logo && <img src={home.logo} alt="" className="w-14 h-14 object-contain" />}
+          <div className="flex items-center gap-3 flex-1 justify-center sm:justify-start">
+            {home.logo && <img src={home.logo} alt="" className="w-10 h-10 sm:w-14 sm:h-14 object-contain" />}
             <div>
-              <p className="font-semibold text-gray-100">{home.name}</p>
+              <p className="font-semibold text-gray-100 text-sm sm:text-base">{home.name}</p>
               <p className="text-xs text-gray-500">{home.record}</p>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* ── Left column: Odds + Analysis ────────────────── */}
         <div className="lg:col-span-2 space-y-6">
           {/* Odds Comparison */}
@@ -263,7 +263,7 @@ function RecommendationCard({ rec, sport, gameId }) {
         <ConfidenceBadge confidence={rec.confidence} size="md" />
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-gray-100 mb-1">{rec.pick}</p>
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+          <div className="flex flex-wrap items-center gap-x-2 sm:gap-x-3 gap-y-1 text-xs">
             <span className="text-gray-500">{BET_TYPE_LABELS[rec.bet_type] || rec.bet_type}</span>
             {rec.odds && (
               <span className="font-mono text-gray-300">
@@ -419,7 +419,7 @@ function PageSkeleton() {
           </div>
         </div>
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         <div className="lg:col-span-2 h-64 bg-gray-800/50 rounded-xl border border-gray-700/40" />
         <div className="h-64 bg-gray-800/50 rounded-xl border border-gray-700/40" />
       </div>

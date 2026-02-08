@@ -117,7 +117,7 @@ export default function Dashboard() {
       )}
 
       {/* Stats row */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 mb-8">
         {gamesLoading ? (
           Array.from({ length: 4 }).map((_, i) => <StatSkeleton key={i} />)
         ) : (
@@ -214,11 +214,11 @@ export default function Dashboard() {
 
 function StatCard({ label, value }) {
   return (
-    <div className="bg-gray-800/50 rounded-xl border border-gray-700/40 px-4 py-4">
-      <p className="text-[11px] font-medium text-gray-500 uppercase tracking-wider mb-1">
+    <div className="bg-gray-800/50 rounded-xl border border-gray-700/40 px-3 sm:px-4 py-3 sm:py-4">
+      <p className="text-[10px] sm:text-[11px] font-medium text-gray-500 uppercase tracking-wider mb-1">
         {label}
       </p>
-      <p className="text-2xl font-bold text-white">{value}</p>
+      <p className="text-xl sm:text-2xl font-bold text-white">{value}</p>
     </div>
   );
 }

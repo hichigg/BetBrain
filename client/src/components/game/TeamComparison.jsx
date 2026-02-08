@@ -91,7 +91,7 @@ export default function TeamComparison({ home, away, sport }) {
   return (
     <div>
       {/* Team headers */}
-      <div className="grid grid-cols-3 gap-4 mb-4">
+      <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-4">
         <div className="text-center">
           {away.logo && <img src={away.logo} alt="" className="w-10 h-10 mx-auto mb-1 object-contain" />}
           <p className="text-sm font-semibold text-gray-200">{away.shortName || away.name}</p>
@@ -115,7 +115,7 @@ export default function TeamComparison({ home, away, sport }) {
           const colors = key === 'record' ? { away: '', home: '' } : compareValues(awayVal, homeVal);
 
           return (
-            <div key={key} className="grid grid-cols-3 gap-4 py-2.5">
+            <div key={key} className="grid grid-cols-3 gap-2 sm:gap-4 py-2 sm:py-2.5">
               <div className={`text-sm text-right font-mono ${colors.away}`}>
                 {awayVal}
               </div>
