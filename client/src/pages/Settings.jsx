@@ -41,7 +41,7 @@ export default function Settings() {
   const { settings, updateSettings, resetSettings, toggleBook, toggleSport } = useSettings();
   const { addToast } = useToast();
 
-  const unitAmount = settings.bankroll * 0.01;
+  const unitAmount = settings.startingBankroll * 0.01;
 
   return (
     <div className="max-w-2xl space-y-6">
@@ -86,8 +86,8 @@ export default function Settings() {
 
       {/* 2. Bankroll */}
       <SettingsSection
-        title="Bankroll"
-        description="Set your total bankroll to calculate unit sizes. 1 unit = 1% of bankroll."
+        title="Starting Bankroll"
+        description="Set your starting bankroll. 1 unit = 1% of this amount. Your live balance is tracked on the Bet Slip page."
       >
         <div className="flex items-center gap-3">
           <div className="relative">
@@ -96,10 +96,10 @@ export default function Settings() {
               type="number"
               min="0"
               step="100"
-              value={settings.bankroll}
+              value={settings.startingBankroll}
               onChange={(e) => {
                 const val = Number(e.target.value);
-                if (!Number.isNaN(val)) updateSettings({ bankroll: Math.max(0, val) });
+                if (!Number.isNaN(val)) updateSettings({ startingBankroll: Math.max(0, val) });
               }}
               className="w-full sm:w-40 pl-7 pr-3 py-2.5 bg-gray-800 border border-gray-700/60 rounded-lg text-gray-200 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
             />

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { betslipApi } from '../services/api';
 import { formatOdds } from '../utils/odds';
+import { useSettings } from '../hooks/useSettings';
 import ConfidenceBadge from '../components/picks/ConfidenceBadge';
 import ErrorPanel from '../components/common/ErrorPanel';
 import { useToast } from '../components/common/Toast';
@@ -30,6 +31,7 @@ export default function BetSlip() {
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState('all'); // all | pending | settled
   const { addToast } = useToast();
+  const { settings } = useSettings();
 
   const fetchSlips = useCallback(() => {
     setLoading(true);
@@ -74,6 +76,9 @@ export default function BetSlip() {
   const totalUnits = settled.reduce((sum, s) => sum + s.profit, 0);
   const totalWagered = settled.reduce((sum, s) => sum + s.units, 0);
   const roi = totalWagered > 0 ? (totalUnits / totalWagered) * 100 : 0;
+  const unitSize = settings.startingBankroll * 0.01;
+  const totalDollarPL = totalUnits * unitSize;
+  const currentBalance = settings.startingBankroll + totalDollarPL;
 
   if (loading) return <PageSkeleton />;
 
@@ -101,15 +106,19 @@ export default function BetSlip() {
       {/* Summary bar */}
       {slips.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 sm:gap-3 mb-6">
-          <StatCard label="Total Picks" value={slips.length} />
+          <StatCard
+            label="Balance"
+            value={`$${currentBalance.toFixed(2)}`}
+            color={currentBalance > settings.startingBankroll ? 'text-emerald-400' : currentBalance < settings.startingBankroll ? 'text-red-400' : 'text-white'}
+          />
           <StatCard
             label="Record"
             value={`${wins}-${losses}${pushes > 0 ? `-${pushes}` : ''}`}
           />
           <StatCard
-            label="Units +/-"
-            value={`${totalUnits >= 0 ? '+' : ''}${totalUnits.toFixed(2)}`}
-            color={totalUnits > 0 ? 'text-emerald-400' : totalUnits < 0 ? 'text-red-400' : 'text-white'}
+            label="P&L"
+            value={`${totalDollarPL >= 0 ? '+' : '-'}$${Math.abs(totalDollarPL).toFixed(2)}`}
+            color={totalDollarPL > 0 ? 'text-emerald-400' : totalDollarPL < 0 ? 'text-red-400' : 'text-white'}
           />
           <StatCard
             label="ROI"
@@ -160,6 +169,7 @@ export default function BetSlip() {
               key={slip.id}
               slip={slip}
               onRemove={handleRemove}
+              unitSize={unitSize}
             />
           ))}
         </div>
@@ -170,7 +180,7 @@ export default function BetSlip() {
 
 // ── Sub-components ──────────────────────────────────────────────────
 
-function SlipCard({ slip, onRemove }) {
+function SlipCard({ slip, onRemove, unitSize }) {
   const [confirming, setConfirming] = useState(false);
   const isPending = slip.result === 'pending';
 
@@ -290,6 +300,11 @@ function SlipCard({ slip, onRemove }) {
               >
                 {slip.profit > 0 ? '+' : ''}
                 {slip.profit.toFixed(2)}u
+                {unitSize > 0 && (
+                  <span className="text-gray-500 ml-1">
+                    ({slip.profit >= 0 ? '+' : '-'}${Math.abs(slip.profit * unitSize).toFixed(2)})
+                  </span>
+                )}
               </span>
             )}
           </div>

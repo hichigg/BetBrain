@@ -68,32 +68,32 @@ function OddsUsageIndicator({ remaining }) {
     return (
       <div className="flex items-center gap-2 text-[11px] text-slate-500">
         <StatusDot className="bg-slate-600" />
-        <span>Odds API: connecting...</span>
+        <span>Connecting...</span>
       </div>
     );
   }
 
-  const total = 500; // default monthly limit for free tier
+  const total = 100; // hourly limit for free tier
   const pct = Math.min((remaining / total) * 100, 100);
   const color =
-    remaining < 50
+    remaining < 10
       ? 'bg-red-500'
-      : remaining < 150
+      : remaining < 30
         ? 'bg-amber-500'
         : 'bg-emerald-500';
   const textColor =
-    remaining < 50
+    remaining < 10
       ? 'text-red-400'
-      : remaining < 150
+      : remaining < 30
         ? 'text-amber-400'
         : 'text-slate-400';
 
   return (
     <div>
+      <p className="text-[10px] text-slate-600 mb-1.5">Requests remaining, resets hourly</p>
       <div className="flex items-center justify-between mb-1.5">
         <div className="flex items-center gap-1.5">
           <StatusDot className={color} />
-          <span className="text-[11px] text-slate-500">Odds API</span>
         </div>
         <span className={`text-[11px] font-mono font-medium ${textColor}`}>
           {remaining}
@@ -105,7 +105,6 @@ function OddsUsageIndicator({ remaining }) {
           style={{ width: `${pct}%` }}
         />
       </div>
-      <p className="text-[10px] text-slate-600 mt-1">requests remaining</p>
     </div>
   );
 }

@@ -126,14 +126,16 @@ export default function MobileNav() {
         {/* Odds usage */}
         <div className="absolute bottom-0 left-0 right-0 px-4 py-3 border-t border-slate-800/60">
           {remaining !== null ? (
-            <div className="flex items-center justify-between text-[11px]">
-              <span className="text-slate-500">Odds API</span>
-              <span className={`font-mono font-medium ${remaining < 50 ? 'text-red-400' : 'text-slate-400'}`}>
-                {remaining} left
-              </span>
+            <div>
+              <p className="text-[10px] text-slate-600 mb-1">Requests remaining, resets hourly</p>
+              <div className="flex items-center justify-between text-[11px]">
+                <span className={`font-mono font-medium ${remaining < 10 ? 'text-red-400' : 'text-slate-400'}`}>
+                  {remaining} left
+                </span>
+              </div>
             </div>
           ) : (
-            <span className="text-[11px] text-slate-600">Odds API: connecting...</span>
+            <span className="text-[11px] text-slate-600">Connecting...</span>
           )}
         </div>
       </div>

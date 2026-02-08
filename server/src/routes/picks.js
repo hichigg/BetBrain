@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { analyzeGame, analyzeGamesForSport } from '../services/claude.js';
 import { getGamesForSport, getGameDetail } from '../services/aggregator.js';
 import { getSupportedSports } from '../utils/sportMappings.js';
+import { getOrFetch, TTL } from '../services/cache.js';
 
 const router = Router();
 
@@ -77,36 +78,64 @@ router.get('/', async (req, res) => {
 /**
  * GET /api/picks/top?date={date}&limit=5
  * Returns the top N picks across ALL sports, sorted by confidence.
+ * Caches the aggregated result for 60 min so subsequent loads are instant.
  */
 router.get('/top', async (req, res) => {
   try {
     const date = req.query.date || today();
     const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 5, 1), 20);
 
-    const sports = getSupportedSports();
+    const allPicks = await getOrFetch(`picks:top:${date}`, async () => {
+      const sports = getSupportedSports();
 
-    // Analyze all sports in parallel
-    const results = await Promise.all(
-      sports.map((sport) => analyzeGamesForSport(sport, date).catch(() => null)),
-    );
+      // Pre-check which sports have games today (fast — uses cached ESPN data)
+      const sportGames = await Promise.all(
+        sports.map(async (sport) => {
+          try {
+            const games = await getGamesForSport(sport, date);
+            const hasAnalyzable = games.some(
+              (g) => g.status?.state === 'STATUS_SCHEDULED' && g.odds,
+            );
+            return hasAnalyzable ? sport : null;
+          } catch {
+            return null;
+          }
+        }),
+      );
+      const activeSports = sportGames.filter(Boolean);
 
-    // Collect all picks across sports
-    const allPicks = [];
-    for (const result of results) {
-      if (result?.allPicks) {
-        allPicks.push(...result.allPicks);
+      if (activeSports.length === 0) return [];
+
+      // Analyze only sports that have schedulable games with odds
+      const results = await Promise.all(
+        activeSports.map((sport) =>
+          analyzeGamesForSport(sport, date).catch((err) => {
+            console.warn(`Top picks: ${sport} analysis failed:`, err.message);
+            return null;
+          }),
+        ),
+      );
+
+      // Collect all picks across sports
+      const picks = [];
+      for (const result of results) {
+        if (result?.allPicks) {
+          picks.push(...result.allPicks);
+        }
       }
-    }
 
-    // Sort by confidence descending, then by EV
-    allPicks.sort((a, b) => {
-      if (b.confidence !== a.confidence) return b.confidence - a.confidence;
-      const evA = parseFloat(a.expected_value) || 0;
-      const evB = parseFloat(b.expected_value) || 0;
-      return evB - evA;
-    });
+      // Sort by confidence descending, then by EV
+      picks.sort((a, b) => {
+        if (b.confidence !== a.confidence) return b.confidence - a.confidence;
+        const evA = parseFloat(a.expected_value) || 0;
+        const evB = parseFloat(b.expected_value) || 0;
+        return evB - evA;
+      });
 
-    return res.json({ success: true, data: allPicks.slice(0, limit) });
+      return picks;
+    }, TTL.ANALYSIS);
+
+    return res.json({ success: true, data: (allPicks || []).slice(0, limit) });
   } catch (err) {
     console.error('GET /api/picks/top error:', err.message);
     res.status(500).json({ success: false, error: 'Failed to fetch top picks' });

@@ -711,7 +711,7 @@ function step10_securityCheck() {
   // 2. Check API keys are set (not empty)
   const envKeys = [
     { name: 'ANTHROPIC_API_KEY', val: process.env.ANTHROPIC_API_KEY },
-    { name: 'ODDS_API_KEY', val: process.env.ODDS_API_KEY },
+    { name: 'ODDS_API_IO_KEY', val: process.env.ODDS_API_IO_KEY },
   ];
 
   for (const key of envKeys) {
@@ -736,7 +736,7 @@ function step10_securityCheck() {
 
   const keyPatterns = [
     /sk-ant-api[a-zA-Z0-9_-]{20,}/,
-    /ODDS_API_KEY\s*=\s*['"][a-f0-9]{20,}['"]/,
+    /ODDS_API_IO_KEY\s*=\s*['"][a-f0-9]{20,}['"]/,
     /ANTHROPIC_API_KEY\s*=\s*['"]sk-/,
   ];
 

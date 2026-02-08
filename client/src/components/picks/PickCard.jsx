@@ -35,7 +35,7 @@ function PickCard({ pick, compact = false }) {
     sport,
   } = pick;
 
-  const betAmount = units * (settings.bankroll * 0.01);
+  const betAmount = units * (settings.startingBankroll * 0.01);
   const evNum = parseFloat(expected_value);
   const evPositive = evNum > 0;
 
@@ -85,7 +85,7 @@ function PickCard({ pick, compact = false }) {
           </span>
           <span className="text-gray-500">
             {units}u
-            {settings.bankroll > 0 && (
+            {settings.startingBankroll > 0 && (
               <span className="text-gray-600 ml-1">(${betAmount.toFixed(0)})</span>
             )}
           </span>

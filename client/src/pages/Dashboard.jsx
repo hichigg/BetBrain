@@ -226,9 +226,9 @@ function StatCard({ label, value }) {
 function EmptyPicksState() {
   return (
     <div className="bg-gray-800/30 rounded-xl border border-gray-700/30 py-12 text-center">
-      <p className="text-gray-400 font-medium mb-1">No picks yet</p>
+      <p className="text-gray-400 font-medium mb-1">No picks available</p>
       <p className="text-gray-600 text-sm">
-        Picks are generated when you view games with available odds.
+        No games with odds found today. Check back when games are scheduled.
       </p>
       <Link
         to="/games"

@@ -9,31 +9,37 @@ const SPORT_MAPPINGS = {
   nfl: {
     espn: { sport: 'football', league: 'nfl' },
     oddsApi: 'americanfootball_nfl',
+    oddsApiIo: { sport: 'american-football', league: 'usa-nfl' },
     name: 'NFL',
   },
   ncaaf: {
     espn: { sport: 'football', league: 'college-football' },
     oddsApi: 'americanfootball_ncaaf',
+    oddsApiIo: { sport: 'american-football', league: 'usa-ncaa-regular-season' },
     name: 'College Football',
   },
   nba: {
     espn: { sport: 'basketball', league: 'nba' },
     oddsApi: 'basketball_nba',
+    oddsApiIo: { sport: 'basketball', league: 'usa-nba' },
     name: 'NBA',
   },
   ncaab: {
     espn: { sport: 'basketball', league: 'mens-college-basketball' },
     oddsApi: 'basketball_ncaab',
+    oddsApiIo: { sport: 'basketball', league: 'usa-ncaa-regular-season' },
     name: 'College Basketball',
   },
   mlb: {
     espn: { sport: 'baseball', league: 'mlb' },
     oddsApi: 'baseball_mlb',
+    oddsApiIo: { sport: 'baseball', league: 'usa-mlb' },
     name: 'MLB',
   },
   nhl: {
     espn: { sport: 'hockey', league: 'nhl' },
     oddsApi: 'icehockey_nhl',
+    oddsApiIo: { sport: 'ice-hockey', league: 'usa-nhl' },
     name: 'NHL',
   },
 };

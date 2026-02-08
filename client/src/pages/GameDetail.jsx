@@ -234,7 +234,7 @@ function RecommendationCard({ rec, sport, gameId }) {
   const { addToast } = useToast();
   const { settings } = useSettings();
 
-  const betAmount = rec.units * (settings.bankroll * 0.01);
+  const betAmount = rec.units * (settings.startingBankroll * 0.01);
   const evNum = parseFloat(rec.expected_value);
   const evPositive = evNum > 0;
 
@@ -280,7 +280,7 @@ function RecommendationCard({ rec, sport, gameId }) {
             </span>
             <span className="text-gray-500">
               {rec.units}u
-              {settings.bankroll > 0 && (
+              {settings.startingBankroll > 0 && (
                 <span className="text-gray-600 ml-1">(${betAmount.toFixed(0)})</span>
               )}
             </span>

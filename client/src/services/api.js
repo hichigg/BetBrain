@@ -57,7 +57,7 @@ export const picksApi = {
     const params = new URLSearchParams();
     if (date) params.set('date', date);
     params.set('limit', limit);
-    return request(`/picks/top?${params}`);
+    return request(`/picks/top?${params}`, {}, ANALYSIS_TIMEOUT);
   },
 };
 

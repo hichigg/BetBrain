@@ -3,19 +3,11 @@ import { createContext, useContext, useState, useEffect, useMemo, useCallback } 
 const STORAGE_KEY = 'betbrain_settings';
 
 export const SPORTSBOOKS = [
-  { key: 'fanduel', label: 'FanDuel' },
   { key: 'draftkings', label: 'DraftKings' },
+  { key: 'fanduel', label: 'FanDuel' },
   { key: 'betmgm', label: 'BetMGM' },
   { key: 'caesars', label: 'Caesars' },
-  { key: 'pointsbet', label: 'PointsBet' },
-  { key: 'bet365', label: 'Bet365' },
-  { key: 'bovada', label: 'Bovada' },
-  { key: 'betrivers', label: 'BetRivers' },
-  { key: 'unibet', label: 'Unibet' },
-  { key: 'wynnbet', label: 'WynnBET' },
-  { key: 'superbook', label: 'SuperBook' },
-  { key: 'twinspires', label: 'TwinSpires' },
-  { key: 'betus', label: 'BetUS' },
+  { key: 'fanatics', label: 'Fanatics' },
 ];
 
 export const ALL_SPORTS = [
@@ -29,7 +21,7 @@ export const ALL_SPORTS = [
 
 export const DEFAULT_SETTINGS = {
   preferredBooks: ['fanduel', 'draftkings'],
-  bankroll: 1000,
+  startingBankroll: 1000,
   riskTolerance: 'moderate',
   trackedSports: ['nfl', 'ncaaf', 'nba', 'ncaab', 'mlb', 'nhl'],
   oddsFormat: 'american',
@@ -40,6 +32,11 @@ function loadSettings() {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return { ...DEFAULT_SETTINGS };
     const parsed = JSON.parse(raw);
+    // Migrate old `bankroll` key → `startingBankroll`
+    if (parsed.bankroll != null && parsed.startingBankroll == null) {
+      parsed.startingBankroll = parsed.bankroll;
+      delete parsed.bankroll;
+    }
     return { ...DEFAULT_SETTINGS, ...parsed };
   } catch {
     return { ...DEFAULT_SETTINGS };
