@@ -3,6 +3,9 @@ import { analyzeGame, analyzeGamesForSport } from '../services/claude.js';
 import { getGamesForSport, getGameDetail } from '../services/aggregator.js';
 import { getSupportedSports } from '../utils/sportMappings.js';
 import { getOrFetch, TTL } from '../services/cache.js';
+import { requireAuth } from '../middleware/auth.js';
+import { requireAnalysisQuota } from '../middleware/tier.js';
+import { incrementAnalysis } from '../models/usage.js';
 
 const router = Router();
 
@@ -14,11 +17,13 @@ function today() {
 /**
  * POST /api/picks/analyze
  * Trigger Claude analysis for a sport/date or a single game.
+ * Requires auth + quota check.
  * Body: { sport, date } or { sport, gameId }
  */
-router.post('/analyze', async (req, res) => {
+router.post('/analyze', requireAuth, requireAnalysisQuota, async (req, res) => {
   try {
     const { sport, date, gameId } = req.body;
+    const model = req.tierConfig?.model;
 
     if (!sport) {
       return res.status(400).json({ success: false, error: 'sport is required' });
@@ -39,13 +44,15 @@ router.post('/analyze', async (req, res) => {
         return res.status(404).json({ success: false, error: 'Game not found in scoreboard' });
       }
 
-      const result = await analyzeGame(sport, game, detail);
+      const result = await analyzeGame(sport, game, detail, { model });
+      incrementAnalysis(req.user.id, today());
       return res.json({ success: true, data: result });
     }
 
     // Batch analysis for a sport/date
     const analysisDate = date || today();
-    const result = await analyzeGamesForSport(sport, analysisDate);
+    const result = await analyzeGamesForSport(sport, analysisDate, { model });
+    incrementAnalysis(req.user.id, today());
     return res.json({ success: true, data: result });
   } catch (err) {
     console.error('POST /api/picks/analyze error:', err.message);
@@ -55,8 +62,7 @@ router.post('/analyze', async (req, res) => {
 
 /**
  * GET /api/picks?sport={sport}&date={date}
- * Retrieve picks for a sport/date. Uses cached analysis if available,
- * otherwise triggers a new analysis.
+ * Retrieve picks for a sport/date. Returns cached analysis if available.
  */
 router.get('/', async (req, res) => {
   try {

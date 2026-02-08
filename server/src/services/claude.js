@@ -116,7 +116,7 @@ export function parseClaudeResponse(raw) {
  * @param {object} [detail] - Optional deep detail from getGameDetail
  * @returns {Promise<object>} Parsed analysis with game_summary and recommendations
  */
-export async function analyzeGame(sport, gameData, detail = null) {
+export async function analyzeGame(sport, gameData, detail = null, { model = MODEL } = {}) {
   const cacheKey = keys.analysis(sport, gameData.date?.split('T')[0] || 'unknown', gameData.id);
 
   return getOrFetch(cacheKey, async () => {
@@ -124,9 +124,10 @@ export async function analyzeGame(sport, gameData, detail = null) {
     const userPrompt = buildPrompt(gameData, detail);
 
     try {
+      const useModel = model || MODEL;
       const response = await client.messages.create(
         {
-          model: MODEL,
+          model: useModel,
           max_tokens: MAX_TOKENS,
           temperature: TEMPERATURE,
           system: SYSTEM_PROMPT,
@@ -140,7 +141,7 @@ export async function analyzeGame(sport, gameData, detail = null) {
       totalInputTokens += usage.input_tokens || 0;
       totalOutputTokens += usage.output_tokens || 0;
       console.log(
-        `Claude [${sport}/${gameData.id}]: ${usage.input_tokens || '?'} in / ${usage.output_tokens || '?'} out` +
+        `Claude [${useModel}/${sport}/${gameData.id}]: ${usage.input_tokens || '?'} in / ${usage.output_tokens || '?'} out` +
         ` | Session total: ${totalInputTokens} in / ${totalOutputTokens} out`,
       );
 
@@ -178,7 +179,7 @@ export async function analyzeGame(sport, gameData, detail = null) {
  * @param {string} date - YYYY-MM-DD
  * @returns {Promise<object>} { games: analysisPerGame[], allPicks: sortedRecommendations[] }
  */
-export async function analyzeGamesForSport(sport, date) {
+export async function analyzeGamesForSport(sport, date, { model = MODEL } = {}) {
   const games = await getGamesForSport(sport, date);
 
   // Filter to pre-game games that have odds (exclude in-progress and final)
@@ -217,10 +218,11 @@ export async function analyzeGamesForSport(sport, date) {
       `      "game_summary": "...",\n      "recommendations": [...]\n    }\n  ]\n}\n` +
       gamePrompts.join('\n');
 
+    const useModel = model || MODEL;
     try {
       const response = await client.messages.create(
         {
-          model: MODEL,
+          model: useModel,
           max_tokens: MAX_TOKENS * 2, // More tokens for batch
           temperature: TEMPERATURE,
           system: SYSTEM_PROMPT,
@@ -233,7 +235,7 @@ export async function analyzeGamesForSport(sport, date) {
       totalInputTokens += usage.input_tokens || 0;
       totalOutputTokens += usage.output_tokens || 0;
       console.log(
-        `Claude BATCH [${sport}/${date}]: ${usage.input_tokens || '?'} in / ${usage.output_tokens || '?'} out` +
+        `Claude BATCH [${useModel}/${sport}/${date}]: ${usage.input_tokens || '?'} in / ${usage.output_tokens || '?'} out` +
         ` | Session total: ${totalInputTokens} in / ${totalOutputTokens} out`,
       );
 

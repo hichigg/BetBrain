@@ -50,11 +50,51 @@ db.exec(`
   );
 
   CREATE INDEX IF NOT EXISTS idx_analysis_log_date ON analysis_log(date);
+
+  CREATE TABLE IF NOT EXISTS users (
+    id              TEXT PRIMARY KEY,
+    google_id       TEXT UNIQUE NOT NULL,
+    email           TEXT UNIQUE NOT NULL,
+    name            TEXT,
+    picture         TEXT,
+    tier            TEXT NOT NULL DEFAULT 'free',
+    stripe_customer_id TEXT UNIQUE,
+    created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS subscriptions (
+    id                    TEXT PRIMARY KEY,
+    user_id               TEXT NOT NULL REFERENCES users(id),
+    stripe_subscription_id TEXT UNIQUE NOT NULL,
+    stripe_price_id       TEXT NOT NULL,
+    status                TEXT NOT NULL DEFAULT 'active',
+    current_period_start  TEXT,
+    current_period_end    TEXT,
+    cancel_at_period_end  INTEGER NOT NULL DEFAULT 0,
+    created_at            TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at            TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS daily_usage (
+    id       INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id  TEXT NOT NULL REFERENCES users(id),
+    date     TEXT NOT NULL,
+    analyses INTEGER NOT NULL DEFAULT 0,
+    UNIQUE(user_id, date)
+  );
 `);
 
 // Add resolved_by column if it doesn't exist (safe for restarts)
 try {
   db.exec(`ALTER TABLE picks ADD COLUMN resolved_by TEXT DEFAULT NULL`);
+} catch {
+  // Column already exists — ignore
+}
+
+// Add user_id column to picks if it doesn't exist
+try {
+  db.exec(`ALTER TABLE picks ADD COLUMN user_id TEXT DEFAULT NULL`);
 } catch {
   // Column already exists — ignore
 }

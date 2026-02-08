@@ -6,10 +6,10 @@ import db from './db.js';
 const insertStmt = db.prepare(`
   INSERT INTO picks (id, game_id, sport, date, home_team, away_team, game_name,
     bet_type, pick, odds, confidence, expected_value, risk_tier, units, reasoning,
-    result, profit_loss, created_at)
+    result, profit_loss, user_id, created_at)
   VALUES (@id, @game_id, @sport, @date, @home_team, @away_team, @game_name,
     @bet_type, @pick, @odds, @confidence, @expected_value, @risk_tier, @units,
-    @reasoning, @result, @profit_loss, @created_at)
+    @reasoning, @result, @profit_loss, @user_id, @created_at)
 `);
 
 const getByIdStmt = db.prepare('SELECT * FROM picks WHERE id = ?');
@@ -65,6 +65,7 @@ export function savePick({
   risk_tier,
   units = 1,
   reasoning,
+  user_id,
 }) {
   const row = {
     id: crypto.randomUUID(),
@@ -84,6 +85,7 @@ export function savePick({
     reasoning: reasoning || null,
     result: 'pending',
     profit_loss: 0,
+    user_id: user_id || null,
     created_at: new Date().toISOString(),
   };
 
@@ -110,6 +112,10 @@ export function getPicks(filters = {}) {
   if (filters.result) {
     clauses.push('result = @result');
     params.result = filters.result;
+  }
+  if (filters.user_id) {
+    clauses.push('user_id = @user_id');
+    params.user_id = filters.user_id;
   }
 
   const where = clauses.length > 0 ? `WHERE ${clauses.join(' AND ')}` : '';

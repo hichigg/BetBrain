@@ -15,8 +15,14 @@ async function request(endpoint, options = {}, timeoutMs = DEFAULT_TIMEOUT) {
   const timer = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
+    const headers = { 'Content-Type': 'application/json' };
+    const token = localStorage.getItem('betbrain_token');
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
     const res = await fetch(`${API_BASE}${endpoint}`, {
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       ...options,
       signal: controller.signal,
     });
@@ -72,6 +78,20 @@ export const betslipApi = {
 
 export const oddsApi = {
   usage: () => request('/odds/usage'),
+};
+
+export const authApi = {
+  loginGoogle: (credential) =>
+    request('/auth/google', { method: 'POST', body: JSON.stringify({ credential }) }),
+  me: () => request('/auth/me'),
+};
+
+export const subscriptionApi = {
+  checkout: (plan) =>
+    request('/subscription/checkout', { method: 'POST', body: JSON.stringify({ plan }) }),
+  portal: () =>
+    request('/subscription/portal', { method: 'POST' }),
+  status: () => request('/subscription/status'),
 };
 
 export const performanceApi = {

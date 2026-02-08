@@ -1,5 +1,6 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, Link } from 'react-router-dom';
 import useOddsUsage from '../../hooks/useOddsUsage';
+import UserMenu from './UserMenu';
 
 const NAV_ITEMS = [
   { to: '/', label: 'Dashboard', icon: DashboardIcon, end: true },
@@ -17,7 +18,7 @@ export default function Sidebar() {
   return (
     <aside className="hidden lg:flex lg:flex-col w-60 bg-slate-900 border-r border-slate-800 fixed inset-y-0 left-0 z-30">
       {/* Logo */}
-      <div className="flex items-center gap-2.5 px-5 h-16 border-b border-slate-800/60">
+      <Link to="/" className="flex items-center gap-2.5 px-5 h-16 border-b border-slate-800/60 hover:bg-slate-800/40 transition-colors">
         <div className="flex items-center gap-2">
           <svg className="w-7 h-7 text-indigo-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M12 2L2 7l10 5 10-5-10-5z" />
@@ -29,7 +30,7 @@ export default function Sidebar() {
         <span className="text-[10px] font-bold bg-indigo-600 text-white px-1.5 py-0.5 rounded-full leading-none">
           AI
         </span>
-      </div>
+      </Link>
 
       {/* Nav links */}
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
@@ -52,12 +53,17 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      {/* Odds API usage */}
-      <div className="px-4 py-3 border-t border-slate-800/60 space-y-2">
-        <OddsUsageIndicator remaining={remaining} />
-        <p className="text-[10px] text-slate-600 leading-relaxed">
-          For entertainment only. Bet responsibly.
-        </p>
+      {/* User menu + Odds usage */}
+      <div className="border-t border-slate-800/60">
+        <div className="px-3 py-3">
+          <UserMenu />
+        </div>
+        <div className="px-4 py-3 border-t border-slate-800/60 space-y-2">
+          <OddsUsageIndicator remaining={remaining} />
+          <p className="text-[10px] text-slate-600 leading-relaxed">
+            For entertainment only. Bet responsibly.
+          </p>
+        </div>
       </div>
     </aside>
   );

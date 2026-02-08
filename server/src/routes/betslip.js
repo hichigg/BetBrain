@@ -4,16 +4,18 @@ import {
   getPicks,
   updateResult,
   deletePick,
+  getPickById,
 } from '../models/picks.js';
 import { resolveAllPending } from '../services/resolver.js';
+import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
 
 /**
  * GET /api/betslip?date=YYYY-MM-DD&sport=nba&result=pending
- * Returns saved picks with optional filters.
+ * Returns saved picks for the authenticated user.
  */
-router.get('/', async (req, res) => {
+router.get('/', requireAuth, async (req, res) => {
   try {
     // Auto-resolve any pending picks before returning
     try {
@@ -23,7 +25,7 @@ router.get('/', async (req, res) => {
     }
 
     const { date, sport, result } = req.query;
-    const picks = getPicks({ date, sport, result });
+    const picks = getPicks({ date, sport, result, user_id: req.user.id });
 
     // Map DB column names to what the frontend expects
     const data = picks.map(mapPickToResponse);
@@ -36,9 +38,9 @@ router.get('/', async (req, res) => {
 
 /**
  * POST /api/betslip
- * Save a pick to the bet slip.
+ * Save a pick to the bet slip for the authenticated user.
  */
-router.post('/', (req, res) => {
+router.post('/', requireAuth, (req, res) => {
   try {
     const { pick, odds, units } = req.body;
 
@@ -63,6 +65,7 @@ router.post('/', (req, res) => {
       risk_tier: req.body.risk_tier,
       units,
       reasoning: req.body.reasoning,
+      user_id: req.user.id,
     });
 
     res.status(201).json({ success: true, data: mapPickToResponse(saved) });
@@ -74,9 +77,9 @@ router.post('/', (req, res) => {
 
 /**
  * PATCH /api/betslip/:id
- * Update result (won/lost/push/pending) and recalculate profit.
+ * Update result (won/lost/push/pending) — only if the pick belongs to the user.
  */
-router.patch('/:id', (req, res) => {
+router.patch('/:id', requireAuth, (req, res) => {
   try {
     const { id } = req.params;
     const { result } = req.body;
@@ -87,11 +90,15 @@ router.patch('/:id', (req, res) => {
         .json({ success: false, error: 'Invalid result. Use: won, lost, push, pending' });
     }
 
-    const updated = updateResult(id, result);
-    if (!updated) {
+    const existing = getPickById(id);
+    if (!existing) {
       return res.status(404).json({ success: false, error: 'Pick not found' });
     }
+    if (existing.user_id && existing.user_id !== req.user.id) {
+      return res.status(403).json({ success: false, error: 'Not your pick' });
+    }
 
+    const updated = updateResult(id, result);
     res.json({ success: true, data: mapPickToResponse(updated) });
   } catch (err) {
     console.error('PATCH /api/betslip/:id error:', err.message);
@@ -101,17 +108,21 @@ router.patch('/:id', (req, res) => {
 
 /**
  * DELETE /api/betslip/:id
- * Remove a pick from the bet slip.
+ * Remove a pick — only if it belongs to the user.
  */
-router.delete('/:id', (req, res) => {
+router.delete('/:id', requireAuth, (req, res) => {
   try {
     const { id } = req.params;
-    const removed = deletePick(id);
 
-    if (!removed) {
+    const existing = getPickById(id);
+    if (!existing) {
       return res.status(404).json({ success: false, error: 'Pick not found' });
     }
+    if (existing.user_id && existing.user_id !== req.user.id) {
+      return res.status(403).json({ success: false, error: 'Not your pick' });
+    }
 
+    const removed = deletePick(id);
     res.json({ success: true, data: mapPickToResponse(removed) });
   } catch (err) {
     console.error('DELETE /api/betslip/:id error:', err.message);

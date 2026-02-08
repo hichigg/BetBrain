@@ -6,12 +6,15 @@ import gamesRouter from './routes/games.js';
 import picksRouter from './routes/picks.js';
 import betslipRouter from './routes/betslip.js';
 import performanceRouter from './routes/performance.js';
+import authRouter from './routes/auth.js';
+import subscriptionRouter from './routes/subscription.js';
+import webhooksRouter from './routes/webhooks.js';
 import { getRemainingRequests } from './services/odds.js';
 import { stats as cacheStats } from './services/cache.js';
 import { resolveAllPending } from './services/resolver.js';
 
 // ── Validate required environment variables ────────────────────────
-const REQUIRED_ENV = ['ANTHROPIC_API_KEY', 'ODDS_API_IO_KEY'];
+const REQUIRED_ENV = ['ANTHROPIC_API_KEY', 'ODDS_API_IO_KEY', 'JWT_SECRET', 'GOOGLE_CLIENT_ID'];
 const missing = REQUIRED_ENV.filter((key) => !process.env[key]);
 if (missing.length > 0) {
   console.error(`Missing required environment variables: ${missing.join(', ')}`);
@@ -41,6 +44,10 @@ const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173')
   .split(',')
   .map((s) => s.trim());
 app.use(cors({ origin: allowedOrigins }));
+
+// Stripe webhook needs raw body — must be before express.json()
+app.use('/api/webhooks/stripe', express.raw({ type: 'application/json' }), webhooksRouter);
+
 app.use(express.json());
 
 // Rate limiting (production only)
@@ -71,6 +78,8 @@ if (isProd) {
   );
 }
 
+app.use('/api/auth', authRouter);
+app.use('/api/subscription', subscriptionRouter);
 app.use('/api/games', gamesRouter);
 app.use('/api/picks', picksRouter);
 app.use('/api/betslip', betslipRouter);

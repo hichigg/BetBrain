@@ -1,5 +1,9 @@
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useSettings, SPORTSBOOKS, ALL_SPORTS, DEFAULT_SETTINGS } from '../hooks/useSettings';
 import { useToast } from '../components/common/Toast';
+import { useAuth } from '../hooks/useAuth';
+import { subscriptionApi } from '../services/api';
 
 const RISK_LEVELS = [
   {
@@ -37,11 +41,33 @@ function SettingsSection({ title, description, children }) {
   );
 }
 
+const TIER_INFO = {
+  free: { label: 'Free', color: 'bg-gray-700 text-gray-300', desc: '1 analysis/day, Sonnet 4.5, cached odds' },
+  subscriber: { label: 'Pro', color: 'bg-indigo-600 text-white', desc: '50 analyses/day, Opus 4.6, fresh odds' },
+  admin: { label: 'Admin', color: 'bg-amber-600 text-white', desc: 'Unlimited analyses, Opus 4.6, fresh odds' },
+};
+
 export default function Settings() {
   const { settings, updateSettings, resetSettings, toggleBook, toggleSport } = useSettings();
   const { addToast } = useToast();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const [portalLoading, setPortalLoading] = useState(false);
 
   const unitAmount = settings.startingBankroll * 0.01;
+  const tier = user?.tier || 'free';
+  const tierMeta = TIER_INFO[tier] || TIER_INFO.free;
+
+  const handleManageSubscription = async () => {
+    setPortalLoading(true);
+    try {
+      const data = await subscriptionApi.portal();
+      window.location.href = data.url;
+    } catch (err) {
+      addToast(err.message || 'Failed to open subscription portal', 'error');
+      setPortalLoading(false);
+    }
+  };
 
   return (
     <div className="max-w-2xl space-y-6">
@@ -51,6 +77,52 @@ export default function Settings() {
           Changes are saved automatically.
         </p>
       </div>
+
+      {/* 0. Account & Subscription */}
+      <SettingsSection title="Account & Subscription">
+        <div className="flex items-center gap-4 mb-4">
+          {user?.picture ? (
+            <img src={user.picture} alt="" className="w-12 h-12 rounded-full" referrerPolicy="no-referrer" />
+          ) : (
+            <div className="w-12 h-12 rounded-full bg-indigo-600 flex items-center justify-center">
+              <span className="text-lg font-bold text-white">{(user?.name || '?')[0].toUpperCase()}</span>
+            </div>
+          )}
+          <div>
+            <p className="text-sm font-medium text-gray-200">{user?.name || user?.email}</p>
+            <p className="text-xs text-gray-500">{user?.email}</p>
+            <span className={`inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${tierMeta.color}`}>
+              {tierMeta.label}
+            </span>
+          </div>
+        </div>
+        <p className="text-xs text-gray-500 mb-4">{tierMeta.desc}</p>
+        <div className="flex flex-wrap gap-2">
+          {tier === 'subscriber' && (
+            <button
+              onClick={handleManageSubscription}
+              disabled={portalLoading}
+              className="px-4 py-2 text-sm font-medium bg-gray-800 text-gray-300 border border-gray-700/40 rounded-lg hover:border-gray-600 transition-colors"
+            >
+              {portalLoading ? 'Loading...' : 'Manage Subscription'}
+            </button>
+          )}
+          {tier === 'free' && (
+            <button
+              onClick={() => navigate('/pricing')}
+              className="px-4 py-2 text-sm font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-500 transition-colors"
+            >
+              Upgrade to Pro
+            </button>
+          )}
+          <button
+            onClick={() => { logout(); navigate('/login'); }}
+            className="px-4 py-2 text-sm text-gray-400 border border-gray-700/40 rounded-lg hover:text-red-400 hover:border-red-500/40 transition-colors"
+          >
+            Sign Out
+          </button>
+        </div>
+      </SettingsSection>
 
       {/* 1. Preferred Sportsbooks */}
       <SettingsSection

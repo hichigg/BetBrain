@@ -6,6 +6,7 @@ import ErrorPanel from '../components/common/ErrorPanel';
 import { useTopPicks } from '../hooks/usePicks';
 import useGames from '../hooks/useGames';
 import { useSettings } from '../hooks/useSettings';
+import { useAuth } from '../hooks/useAuth';
 
 function todayStr() {
   const d = new Date();
@@ -69,6 +70,7 @@ function applyRiskFilter(picks, riskTolerance) {
 export default function Dashboard() {
   const [date] = useState(todayStr);
   const { settings } = useSettings();
+  const { user, isAuthenticated } = useAuth();
   const { picks: topPicks, loading: picksLoading, error: picksError, refetch: refetchPicks } = useTopPicks(date, 5);
   const { games, loading: gamesLoading, error: gamesError, refetch: refetchGames } = useGames('all', date);
 
@@ -103,6 +105,38 @@ export default function Dashboard() {
         <h1 className="text-2xl font-bold text-white mb-1">Dashboard</h1>
         <p className="text-gray-500 text-sm">{formatDate(date)}</p>
       </div>
+
+      {/* Upgrade banner for free users */}
+      {isAuthenticated && user?.tier === 'free' && (
+        <div className="mb-6 bg-indigo-600/10 border border-indigo-500/30 rounded-xl p-4 flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium text-indigo-300">Upgrade to Pro</p>
+            <p className="text-xs text-gray-400 mt-0.5">Get 50 AI analyses/day with Opus 4.6 and real-time odds</p>
+          </div>
+          <Link
+            to="/pricing"
+            className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-500 transition-colors flex-shrink-0"
+          >
+            View Plans
+          </Link>
+        </div>
+      )}
+
+      {/* Sign-in prompt for unauthenticated users */}
+      {!isAuthenticated && (
+        <div className="mb-6 bg-gray-800/50 border border-gray-700/40 rounded-xl p-4 flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium text-gray-300">Sign in to unlock AI analysis</p>
+            <p className="text-xs text-gray-500 mt-0.5">Get personalized picks and save your bet slip</p>
+          </div>
+          <Link
+            to="/login"
+            className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-500 transition-colors flex-shrink-0"
+          >
+            Sign In
+          </Link>
+        </div>
+      )}
 
       {/* Errors */}
       {gamesError && (

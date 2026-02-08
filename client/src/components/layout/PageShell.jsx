@@ -1,7 +1,19 @@
+import { useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import MobileNav from './MobileNav';
 
 export default function PageShell({ children }) {
+  const location = useLocation();
+
+  // Full-screen layout for login page (no sidebar/nav)
+  if (location.pathname === '/login') {
+    return (
+      <div className="min-h-screen bg-gray-950">
+        {children}
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-950 flex overflow-x-hidden">
       <Sidebar />
